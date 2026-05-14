@@ -1,4 +1,27 @@
-.PHONY: install dev test quickstart smoke validate build clean docs
+.PHONY: help install dev test quickstart smoke validate build clean docs stats ci
+
+help:
+	@echo "CAB-FF — common tasks"
+	@echo ""
+	@echo "  make install        Install core package (pip install -e .)"
+	@echo "  make dev            Install with dev extras (pytest, linters)"
+	@echo "  make smoke          Run quickstart against the mock model (~5s)"
+	@echo "  make test           Run the pytest suite (~10s)"
+	@echo "  make validate       Validate data/CAB_FF_v3_dataset.json"
+	@echo "  make build          Rebuild dataset from seed + banks"
+	@echo "  make stats          Print dataset breakdown by dim / type / difficulty"
+	@echo "  make ci             Full check: build + validate + test"
+	@echo "  make clean          Remove pyc, caches, and run artifacts"
+	@echo ""
+	@echo "Provider examples (install the corresponding extras first):"
+	@echo "  pip install -e .[anthropic]   # for Claude"
+	@echo "  pip install -e .[openai]      # for GPT"
+	@echo "  pip install -e .[litellm]     # for ~100 providers incl. Ollama"
+	@echo "  pip install -e .[all-providers]"
+	@echo ""
+	@echo "  python examples/quickstart.py --provider anthropic --model claude-sonnet-4-6"
+	@echo "  python examples/quickstart.py --provider openai --model gpt-4o"
+	@echo "  python examples/quickstart.py --provider litellm --model ollama/llama3"
 
 install:
 	pip install -e .
@@ -7,7 +30,7 @@ dev:
 	pip install -e ".[dev]"
 
 test:
-	pytest -q tests/
+	python -m pytest -q tests/
 
 quickstart:
 	python examples/quickstart.py

@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from tqdm import tqdm
 
 from .loader import load_dataset, filter_questions
 from .scorer import ObjectiveScorer, SubjectiveScorer
@@ -116,7 +115,14 @@ class CABEvaluator:
         
         # Run evaluation
         results = []
-        iterator = tqdm(questions) if self.verbose else questions
+        if self.verbose:
+            try:
+                from tqdm import tqdm  # optional dependency
+                iterator = tqdm(questions)
+            except ImportError:
+                iterator = questions
+        else:
+            iterator = questions
         
         for q in iterator:
             result = self._evaluate_question(q)
