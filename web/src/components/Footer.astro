@@ -1,0 +1,35 @@
+---
+import { SITE } from "../data/site";
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-ink-200/70 bg-ink-100/40 dark:border-ink-700/70 dark:bg-ink-800/30">
+  <div class="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-4">
+    <div class="space-y-3 md:col-span-2">
+      <div class="flex items-center gap-2 font-serif text-lg font-semibold text-ink-900 dark:text-ink-50">
+        <span class="grid h-7 w-7 place-items-center rounded-md bg-ink-900 text-xs font-bold text-gold-300 dark:bg-gold-300 dark:text-ink-900">FF</span>
+        <span>CAB-FF</span>
+      </div>
+      <p class="text-sm text-ink-600 dark:text-ink-300 max-w-md">
+        The open Christian AI benchmark. {SITE.questionCount.toLocaleString()} questions, 8 dimensions, 9 tradition-aware judges, drift and sycophancy indices — published under CC BY-SA 4.0.
+      </p>
+      <p class="text-xs text-ink-500 dark:text-ink-400">© {year} {SITE.publisher}. Soli Deo Gloria.</p>
+    </div>
+    <div>
+      <h4 class="eyebrow mb-3">Project</h4>
+      <ul class="space-y-1.5 text-sm">
+        <li><a class="hover:underline" href={SITE.repo}>GitHub repository</a></li>
+        <li><a class="hover:underline" href={SITE.issues}>Issue tracker</a></li>
+        <li><a class="hover:underline" href={`${SITE.repo}/blob/main/CONTRIBUTING.md`}>Contributing</a></li>
+        <li><a class="hover:underline" href={`${SITE.repo}/blob/main/LICENSE`}>License (CC BY-SA 4.0)</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="eyebrow mb-3">Contact</h4>
+      <ul class="space-y-1.5 text-sm">
+        <li><a class="hover:underline" href={SITE.publisherSite}>{SITE.publisherSite.replace("https://", "")}</a></li>
+        <li><a class="hover:underline" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>

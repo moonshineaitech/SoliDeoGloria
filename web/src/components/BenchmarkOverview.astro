@@ -1,0 +1,106 @@
+---
+import { DIMENSIONS, AXES, QUESTION_TYPES, JUDGES } from "../data/benchmark";
+
+const axisColor: Record<string, string> = {
+  general: "pill",
+  drift: "pill-gold",
+  sycophancy: "pill-red",
+  refusal: "pill-green",
+};
+---
+
+<section class="section border-t border-ink-200/60 dark:border-ink-700/60">
+  <div class="max-w-3xl">
+    <p class="eyebrow">The benchmark in one screen</p>
+    <h2 class="h-section mt-2">Eight dimensions, seven axes, five question types, nine judges, forty indicators.</h2>
+    <p class="mt-4 text-ink-700 dark:text-ink-200 leading-relaxed">
+      The shape of CAB-FF is borrowed from Harvard&rsquo;s Human Flourishing Program (the same framework Gloo uses) <em>plus</em> a distinctively Christian eighth dimension &mdash; <strong>Vocation &amp; Witness</strong> &mdash; that secular flourishing frameworks cannot reach by construction.
+    </p>
+  </div>
+
+  <div class="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+    <div>
+      <h3 class="h-sub mb-4">The 8 flourishing dimensions</h3>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {DIMENSIONS.map((d) => (
+          <div class="card flex gap-3 p-4">
+            <div class="font-serif text-3xl text-gold-600 dark:text-gold-300 leading-none">{d.symbol}</div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <h4 class="font-semibold text-sm">{d.name}</h4>
+                <span class="text-[10px] text-ink-500 dark:text-ink-400">{d.count}</span>
+              </div>
+              <p class="text-xs text-ink-600 dark:text-ink-300 leading-relaxed">{d.blurb}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <h3 class="h-sub mb-4">7 faithfulness axes</h3>
+        <ul class="space-y-2">
+          {AXES.map((a) => (
+            <li class="card p-3 flex items-start gap-3">
+              <span class={axisColor[a.category] ?? "pill"}>{a.category}</span>
+              <div class="space-y-1">
+                <div class="text-sm font-medium">{a.name}</div>
+                <div class="text-xs text-ink-600 dark:text-ink-300">{a.blurb}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-12 grid gap-8 lg:grid-cols-2">
+    <div>
+      <h3 class="h-sub mb-4">5 question types</h3>
+      <div class="space-y-2">
+        {QUESTION_TYPES.map((t) => (
+          <div class="card p-4 flex items-start gap-4">
+            <code class="text-xs px-2 py-1 rounded bg-ink-100 dark:bg-ink-800">{t.key}</code>
+            <div class="space-y-1 flex-1">
+              <div class="flex items-baseline justify-between">
+                <span class="font-medium text-sm">{t.name}</span>
+                <span class="text-xs text-ink-500 dark:text-ink-400">{t.count}</span>
+              </div>
+              <p class="text-xs text-ink-600 dark:text-ink-300">{t.desc}</p>
+              <p class="text-[11px] text-ink-500 dark:text-ink-400">Scoring: {t.scoring}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h3 class="h-sub mb-4">9 judge personas</h3>
+      <div class="space-y-2">
+        {JUDGES.map((j) => (
+          <div class="card p-4">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-medium text-sm">{j.name}</span>
+              <span class="pill-gold">{j.tradition}</span>
+            </div>
+            <p class="text-xs text-ink-600 dark:text-ink-300">{j.blurb}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-12 card">
+    <h3 class="h-sub mb-4">Scoring formula</h3>
+    <pre class="font-mono text-xs leading-relaxed overflow-x-auto"><code>{`Flourishing Score   = ⁸√(8 dimension means)
+Faithfulness Index  = ⁷√(7 axis means)
+CAB-FF Score        = √(Flourishing × Faithfulness)
+
+Drift Index         = 100 − mean(drift signals)        (lower is better)
+Sycophancy Index    = 100 − mean(sycophancy signals)   (lower is better)`}</code></pre>
+    <p class="mt-4 text-sm text-ink-600 dark:text-ink-300 max-w-3xl">
+      Geometric means prevent compensation. A model can&rsquo;t hide a weak Faith dimension behind a strong Health dimension, AND can&rsquo;t hide weak Secular-Drift Resistance behind strong Pastoral Sensitivity. Both must be high.
+    </p>
+  </div>
+</section>

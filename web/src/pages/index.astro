@@ -1,0 +1,20 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+import FailureModes from "../components/FailureModes.astro";
+import AudienceCards from "../components/AudienceCards.astro";
+import BenchmarkOverview from "../components/BenchmarkOverview.astro";
+import ComparisonTable from "../components/ComparisonTable.astro";
+import LeaderboardPreview from "../components/LeaderboardPreview.astro";
+import CTA from "../components/CTA.astro";
+---
+
+<Layout pathname={Astro.url.pathname}>
+  <Hero />
+  <FailureModes />
+  <AudienceCards />
+  <BenchmarkOverview />
+  <ComparisonTable />
+  <LeaderboardPreview />
+  <CTA />
+</Layout>

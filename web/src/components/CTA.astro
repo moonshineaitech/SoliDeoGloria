@@ -1,0 +1,37 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<section class="section border-t border-ink-200/60 dark:border-ink-700/60">
+  <div class="max-w-3xl">
+    <p class="eyebrow">Try it</p>
+    <h2 class="h-section mt-2">Five seconds to run. Five minutes to your first real result.</h2>
+  </div>
+
+  <div class="mt-10 grid gap-6 lg:grid-cols-2">
+    <div class="card space-y-4">
+      <span class="pill-green">No API key required</span>
+      <h3 class="h-sub">Run a smoke test in 5 seconds</h3>
+      <pre class="font-mono text-xs overflow-x-auto bg-ink-100/60 dark:bg-ink-900/60 p-4 rounded-lg"><code>git clone {`https://github.com/moonshineaitech/SoliDeoGloria`}
+cd SoliDeoGloria
+pip install -e .
+python examples/quickstart.py</code></pre>
+      <p class="text-sm text-ink-600 dark:text-ink-300">
+        Uses the built-in mock model + mock judge. Verifies your install, takes ~5 seconds.
+      </p>
+    </div>
+
+    <div class="card space-y-4">
+      <span class="pill-gold">Bring your own API key</span>
+      <h3 class="h-sub">Run against your model in the browser</h3>
+      <p class="text-sm text-ink-600 dark:text-ink-300">
+        Paste your Anthropic or OpenAI key, pick a model, and watch CAB-FF score it on 5 representative questions in ~30 seconds. Your key stays in your browser.
+      </p>
+      <a href={`${base}/try`} class="btn-primary w-fit">Open the live demo →</a>
+    </div>
+  </div>
+
+  <div class="mt-8 text-xs text-ink-500 dark:text-ink-400 max-w-3xl">
+    Full CLI / Python API reference is in the <a class="underline" href="https://github.com/moonshineaitech/SoliDeoGloria#cli-reference">README</a>. Adapters ship for Anthropic, OpenAI, LiteLLM (~100 providers, incl. local Ollama via <code>ollama/llama3</code>).
+  </div>
+</section>

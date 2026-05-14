@@ -1,0 +1,52 @@
+---
+import Layout from "../layouts/Layout.astro";
+import InteractiveDemo from "../components/InteractiveDemo.tsx";
+---
+
+<Layout
+  title="Try CAB-FF live"
+  description="Run CAB-FF in your browser against any LLM provider. Your API key stays in your browser."
+  pathname={Astro.url.pathname}
+>
+  <section class="section">
+    <div class="max-w-3xl">
+      <p class="eyebrow">Live in-browser demo</p>
+      <h1 class="h-display mt-2">Run CAB-FF against your model — right now.</h1>
+      <p class="mt-4 text-ink-700 dark:text-ink-200 leading-relaxed">
+        Paste your Anthropic, OpenAI, or OpenRouter API key, pick a model, and CAB-FF will score it on 8 representative questions — one of every question type, including drift probes and a multi-turn pushback dialogue.
+      </p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-3 text-sm">
+        <div class="card p-4">
+          <div class="font-medium">🔒 Your key never leaves your browser</div>
+          <p class="mt-1 text-xs text-ink-600 dark:text-ink-300">Calls go directly to the provider. We have no server.</p>
+        </div>
+        <div class="card p-4">
+          <div class="font-medium">💸 Costs are yours, on your account</div>
+          <p class="mt-1 text-xs text-ink-600 dark:text-ink-300">8 questions ≈ 10-15 API calls ≈ a few cents.</p>
+        </div>
+        <div class="card p-4">
+          <div class="font-medium">📊 Real CAB-FF scoring</div>
+          <p class="mt-1 text-xs text-ink-600 dark:text-ink-300">Same algorithms as the Python package, ported to JS.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <InteractiveDemo client:only="react" />
+    </div>
+
+    <div class="mt-12 card">
+      <h2 class="h-sub mb-3">Want the full 1,056-question report?</h2>
+      <p class="text-sm text-ink-600 dark:text-ink-300">
+        The in-browser demo is small (8 questions) so it&rsquo;s cheap and fast. For a publication-quality eval, use the Python package:
+      </p>
+      <pre class="mt-4 font-mono text-xs bg-ink-100/60 dark:bg-ink-900/60 p-4 rounded-lg overflow-x-auto"><code>pip install -e &quot;.[anthropic]&quot;
+python examples/quickstart.py --provider anthropic \
+  --model claude-sonnet-4-6 --judge claude-opus-4-7 \
+  --full --output my-run.json</code></pre>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
+        Drop the JSON into <code>results/baselines/</code> and open a PR to add it to the public leaderboard.
+      </p>
+    </div>
+  </section>
+</Layout>
