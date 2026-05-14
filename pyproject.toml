@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cab-benchmark"
-version = "2.0.0"
-description = "Christian AI Benchmark - Evaluating AI alignment with Christian faith"
+version = "3.0.0"
+description = "Christian AI Benchmark (CAB) - v2 base + v3 'Flourishing & Faithfulness' (CAB-FF) for evaluating AI alignment with Christian faith"
 readme = "README.md"
 license = {text = "CC-BY-SA-4.0"}
 requires-python = ">=3.9"
@@ -59,10 +59,11 @@ Documentation = "https://github.com/GoldRockAI/cab-benchmark/docs"
 
 [project.scripts]
 cab-evaluate = "cab_benchmark.cli:main"
+cab-ff = "cab_ff.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cab_benchmark*"]
+include = ["cab_benchmark*", "cab_ff*"]
 
 [tool.black]
 line-length = 88

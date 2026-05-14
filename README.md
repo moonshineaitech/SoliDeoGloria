@@ -1,161 +1,225 @@
-# Christian AI Benchmark (CAB) v2.0
+# Christian AI Benchmark (CAB) — v3.0 "Flourishing & Faithfulness"
 
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
-[![Questions](https://img.shields.io/badge/Questions-991-blue.svg)]()
-[![Dimensions](https://img.shields.io/badge/Dimensions-10-green.svg)]()
-[![Traditions](https://img.shields.io/badge/Traditions-10-orange.svg)]()
+[![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)]()
+[![Dimensions](https://img.shields.io/badge/Dimensions-8-green.svg)]()
+[![Axes](https://img.shields.io/badge/Faithfulness%20Axes-7-orange.svg)]()
+[![Types](https://img.shields.io/badge/Question%20Types-5-blue.svg)]()
 
-A comprehensive framework for evaluating AI alignment with Christian faith across theological dimensions and denominational traditions.
+CAB-FF is a rigorous, fully-open benchmark for evaluating AI systems on
+Christian flourishing and faithfulness. It is a deliberate successor to
+CAB v2.0 and a public response to Gloo's privately-held **FAI-C
+Benchmark** (December 2025).
 
-## Overview
+## At a Glance
 
-CAB v2.0 is a rigorous benchmark designed to assess how well AI systems understand and appropriately engage with Christian theology, pastoral care, ethics, and denominational diversity. Unlike general religious knowledge tests, CAB evaluates nuanced theological reasoning, pastoral sensitivity, and appropriate boundary recognition.
+| | Gloo FAI-C | **CAB-FF v3.0** |
+|---|---|---|
+| Dimensions | 7 | **8** (+ Vocation & Witness) |
+| Cross-cutting faithfulness axes | implicit | **7 explicit, scored** |
+| Question types | obj + subj + tangential | **5: + adversarial, multi-turn, comparative** |
+| Alignment indicators | 25 (private) | **40 (published, with hints)** |
+| Judge panel | undisclosed | **9 named tradition-aware personas** |
+| Drift Index | implicit | **explicit secondary metric** |
+| Sycophancy Index | not measured | **explicit secondary metric** |
+| Methodology | partially private | **fully open** |
+| License | proprietary | CC BY-SA 4.0 |
 
-## Key Features
+See [`docs/GLOO_COMPARISON.md`](docs/GLOO_COMPARISON.md) for the full
+comparison and where CAB-FF directly probes the failure modes Gloo
+publicly identified.
 
-- **991 Unique Questions** - 100% unique, no duplicates
-- **10 Theological Dimensions** - Comprehensive coverage of Christian knowledge domains
-- **10 Denominational Traditions** - Fair representation across Christian traditions
-- **Dual Scoring Modes** - Objective (multiple choice) and subjective (scenario-based)
-- **Scientific Methodology** - Geometric mean aggregation, LLM judge panels, human validation
+## The Eight Dimensions
 
-## Dimensions
+The seven Harvard Human Flourishing Program dimensions Gloo uses, plus
+one that secular flourishing frameworks cannot reach by construction:
 
-| Dimension | Questions | Description |
-|-----------|-----------|-------------|
-| Biblical Literacy | 121 | Scripture knowledge, hermeneutics, exegesis |
-| Systematic Theology | 123 | Doctrine, Christology, soteriology, eschatology |
-| Pastoral Care | 189 | Counseling scenarios, grief, crisis intervention |
-| Christian Ethics | 110 | Moral reasoning, bioethics, social ethics |
-| Church History | 91 | Historical knowledge, movements, figures |
-| Worship & Sacraments | 90 | Liturgy, sacramental theology, worship practice |
-| Apologetics | 79 | Defending faith, engaging objections |
-| Spiritual Formation | 77 | Disciplines, growth, sanctification |
-| Denominational Awareness | 61 | Understanding other traditions fairly |
-| Boundary Respect | 50 | Recognizing AI limitations, appropriate referrals |
+1. Character & Virtue (chi)
+2. Close Social Relationships (rho)
+3. Happiness & Life Satisfaction (eta)
+4. Meaning & Purpose (mu)
+5. Mental & Physical Health (psi)
+6. Financial & Material Stewardship (phi)
+7. Faith & Spirituality (sigma)
+8. **Vocation & Witness (omega) — NEW**
 
-## Traditions
+See [`docs/CAB_FF_DIMENSIONS.md`](docs/CAB_FF_DIMENSIONS.md).
 
-- **Cross-Tradition** (480 questions) - Shared Christian beliefs
-- **Catholic** (75) | **Orthodox** (68) | **Reformed** (61)
-- **Lutheran** (57) | **Baptist** (53) | **Methodist** (51)
-- **Pentecostal** (50) | **Evangelical** (49) | **Anglican** (47)
+## The Seven Transverse Axes
+
+Every response is graded against:
+
+- Doctrinal Fidelity, Scriptural Grounding, Tradition Fairness,
+  Pastoral Sensitivity, **Secular-Drift Resistance**, **Refusal
+  Calibration**, **Sycophancy Resistance**.
+
+## The Five Question Types
+
+| Type | Purpose |
+|---|---|
+| `objective` | Verifiable multiple-choice factual |
+| `subjective` | Open scenario, judge-panel scored |
+| `adversarial` | Probes for documented failure modes (secular drift, fabricated Scripture, sycophancy, refusal miscalibration) |
+| `multi_turn` | 2-4 turn dialogue with pushback; tests consistency |
+| `comparative` | Paired Christian-vs-neutral framing of the same scenario; directly measures drift |
+
+See [`docs/ADVERSARIAL_PROBES.md`](docs/ADVERSARIAL_PROBES.md) for the
+adversarial-probe taxonomy.
+
+## Scoring Formula
+
+```
+Flourishing Score (FF)     = ⁸√(chi · rho · eta · mu · psi · phi · sigma · omega)
+Faithfulness Index (FI)    = ⁷√(7 transverse axis scores)
+Final CAB-FF Score         = √(FF · FI)
+
+Drift Index                = 100 − mean(drift signals)        (lower is better)
+Sycophancy Index           = 100 − mean(sycophancy signals)   (lower is better)
+```
+
+The geometric mean is intentional: a model cannot hide a 30/100 Faith
+score behind a 90/100 Health score, and a model cannot hide a 30/100
+Anti-Drift score behind a 90/100 Pastoral score.
 
 ## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/GoldRockAI/cab-benchmark.git
-cd cab-benchmark
-
-# Install dependencies
 pip install -r requirements.txt
 
-# Run evaluation on your model
-python evaluation/evaluate.py --model your-model --output results/
+# Validate the seed dataset
+python -m cab_ff.cli validate data/CAB_FF_v3_seed.json
+
+# List the 8 dimensions and 7 transverse axes
+python -m cab_ff.cli dimensions
+
+# List the 5 question types
+python -m cab_ff.cli question-types
+
+# List the 9 judge personas
+python -m cab_ff.cli judges
+
+# List the 40 alignment indicators
+python -m cab_ff.cli indicators --christian-only
+
+# Sample 5 adversarial questions
+python -m cab_ff.cli sample data/CAB_FF_v3_seed.json -T adversarial -n 5
 ```
 
-## Dataset Structure
-
-```json
-{
-  "id": "CAB-0001",
-  "scoring_mode": "objective|subjective",
-  "dimension": "Biblical Literacy",
-  "tradition": "Cross-Tradition",
-  "difficulty": "L1|L2|L3",
-  "question": "...",           // for objective
-  "options": ["A)...", ...],   // for objective
-  "correct_answer": "B",       // for objective
-  "scenario": "...",           // for subjective
-  "rubric_focus": "..."        // for subjective
-}
-```
-
-## Scoring Methodology
-
-### Objective Questions (75 questions)
-- Multiple choice with randomized answer positions
-- Binary scoring (correct/incorrect)
-- Prevents pattern exploitation
-
-### Subjective Questions (916 questions)
-- Scenario-based requiring nuanced responses
-- Evaluated by 3-judge LLM panel
-- 1-5 Likert scale with behavioral anchors
-- Median score used for robustness
-
-### Aggregation
-- **Geometric mean** across dimensions prevents compensation
-- A model cannot hide weaknesses by excelling elsewhere
-- Dimension scores weighted equally
-
-## Evaluation
+## Python API
 
 ```python
-from cab_benchmark import CABEvaluator
+from cab_ff import CABFFEvaluator
+from cab_ff.evaluator import EvaluationConfig
 
-evaluator = CABEvaluator(
-    model="your-model-name",
-    judge_model="claude-3-opus",  # or gpt-4
-    num_judges=3
+def my_model(prompt: str) -> str: ...
+def my_judge(system: str, user: str) -> str: ...
+
+evaluator = CABFFEvaluator(
+    model_fn=my_model,
+    judge_fn=my_judge,
+    config=EvaluationConfig(apply_alignment_indicators=True),
 )
-
-results = evaluator.evaluate("data/CAB_v2_Dataset_965.json")
-print(results.summary())
+report = evaluator.evaluate("data/CAB_FF_v3_seed.json")
+print(report["summary"]["cab_ff_score"])
 ```
 
-## Results Format
+A minimal stub example lives at
+[`examples/cab_ff_example.py`](examples/cab_ff_example.py).
 
-```json
-{
-  "model": "model-name",
-  "timestamp": "2026-01-31T...",
-  "overall_score": 0.73,
-  "dimension_scores": {
-    "Biblical Literacy": 0.81,
-    "Pastoral Care": 0.69,
-    ...
-  },
-  "tradition_scores": {...},
-  "detailed_results": [...]
-}
+## Repository Layout
+
 ```
+cab_ff/                          # v3.0 package
+  __init__.py
+  dimensions.py                  # 8 dims, 7 axes, 5 types
+  judges.py                      # 9 judge personas + panel
+  alignment_indicators.py        # 40 binary indicators
+  scorer.py                      # ObjectiveScorer, SubjectiveScorer,
+                                 #   AdversarialScorer, MultiTurnScorer,
+                                 #   ComparativeScorer, AlignmentIndicatorScorer
+  aggregator.py                  # FF, FI, CAB-FF, Drift, Sycophancy
+  evaluator.py                   # CABFFEvaluator orchestrator
+  loader.py                      # schema validation
+  cli.py                         # python -m cab_ff.cli
+
+cab_benchmark/                   # v2.0 package (preserved)
+
+data/
+  CAB_FF_v3_seed.json            # 80-question seed dataset
+  CAB_v2_Dataset_965.json        # v2.0 dataset (preserved)
+
+docs/
+  CAB_FF_METHODOLOGY.md
+  CAB_FF_DIMENSIONS.md
+  CAB_FF_SCHEMA.md
+  GLOO_COMPARISON.md
+  ADVERSARIAL_PROBES.md
+  METHODOLOGY.md / DIMENSIONS.md / SCHEMA.md / TRADITIONS.md  (v2.0)
+
+rubrics/
+  cab_ff_subjective_scoring.md
+  cab_ff_alignment_indicators.md
+  subjective_scoring.md / objective_scoring.md                 (v2.0)
+
+tests/
+  test_cab_ff.py
+  test_loader.py                 (v2.0)
+```
+
+## Seed Dataset Statistics
+
+```
+80 questions
+  by_dimension:
+    Character & Virtue:               11
+    Close Social Relationships:        7
+    Faith & Spirituality:             28
+    Financial & Material Stewardship:  5
+    Happiness & Life Satisfaction:     5
+    Meaning & Purpose:                 4
+    Mental & Physical Health:          8
+    Vocation & Witness:               12
+  by_type:
+    adversarial:  19
+    comparative:  11
+    multi_turn:    7
+    objective:    17
+    subjective:   26
+  by_difficulty:
+    L1:  7   L2: 44   L3: 29
+```
+
+The v3.1 target is 1500+ questions, built with the seed set as a
+template. Contributions welcome — see
+[`docs/CAB_FF_SCHEMA.md`](docs/CAB_FF_SCHEMA.md) and
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Citation
 
 ```bibtex
-@misc{cab2026,
-  title={Christian AI Benchmark (CAB): A Framework for Evaluating AI Alignment with Christian Faith},
-  author={GoldRock AI},
-  year={2026},
-  publisher={Soli Deo Gloria Research Initiative},
-  url={https://github.com/GoldRockAI/cab-benchmark}
+@misc{cabff2026,
+  title  = {CAB-FF: The Flourishing & Faithfulness Benchmark for AI Alignment with Christian Faith},
+  author = {GoldRock AI / Soli Deo Gloria Research Initiative},
+  year   = {2026},
+  url    = {https://github.com/GoldRockAI/cab-benchmark}
 }
 ```
 
 ## License
 
-This dataset is released under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
-
-You are free to:
-- **Share** — copy and redistribute the material
-- **Adapt** — remix, transform, and build upon the material
-
-Under the following terms:
-- **Attribution** — Give appropriate credit
-- **ShareAlike** — Distribute contributions under the same license
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+CC BY-SA 4.0. Share, adapt, attribute, share-alike. Methodology, code,
+and seed dataset are all open.
 
 ## Contact
 
-- **Website**: [SoliDeoGloria.ai](https://SoliDeoGloria.ai)
-- **Publisher**: Eldest AI LLC dba GoldRock AI
-- **Issues**: GitHub Issues
+- **Website:** [SoliDeoGloria.ai](https://SoliDeoGloria.ai)
+- **Publisher:** Eldest AI LLC dba GoldRock AI
+- **Issues:** GitHub Issues
 
 ## Acknowledgments
 
-Developed as part of the Soli Deo Gloria Research Initiative to advance responsible AI development that respects and understands religious faith.
+Developed as part of the Soli Deo Gloria Research Initiative. CAB-FF
+builds on the work of the Harvard Human Flourishing Program (which Gloo's
+framework also draws from), the Barna Group and REVEAL on faith
+formation, and the historic doctrinal traditions of the global
+Church.
