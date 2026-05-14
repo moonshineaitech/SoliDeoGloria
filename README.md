@@ -1,15 +1,15 @@
 # CAB-FF: The Christian AI Benchmark — Flourishing & Faithfulness Edition
 
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
-[![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)]()
-[![Questions](https://img.shields.io/badge/Questions-820%2B-red.svg)]()
+[![Version](https://img.shields.io/badge/Version-3.0.1-blueviolet.svg)]()
+[![Questions](https://img.shields.io/badge/Questions-1056-red.svg)]()
 [![Dimensions](https://img.shields.io/badge/Dimensions-8-green.svg)]()
 [![Axes](https://img.shields.io/badge/Faithfulness%20Axes-7-orange.svg)]()
 [![Types](https://img.shields.io/badge/Question%20Types-5-blue.svg)]()
 [![CI](https://github.com/moonshineaitech/SoliDeoGloria/actions/workflows/ci.yml/badge.svg)](https://github.com/moonshineaitech/SoliDeoGloria/actions/workflows/ci.yml)
 
 > **The open, reproducible Christian AI benchmark.**
-> 820+ questions · 8 dimensions · 9 tradition-aware judges · explicit
+> 1,056 questions · 8 dimensions · 9 tradition-aware judges · explicit
 > Drift and Sycophancy indices · fully published methodology, code, and
 > data under CC BY-SA 4.0.
 
@@ -79,7 +79,7 @@ multi-turn questions.
 
 | | Gloo FAI-C (private) | **CAB-FF v3.0 (open)** |
 |---|---|---|
-| Question count | 807 | **820+** |
+| Question count | 807 (private) | **1,056 (published)** |
 | Dimensions | 7 | **8** (+ Vocation & Witness) |
 | Cross-cutting faithfulness axes | implicit | **7 explicit, scored** |
 | Question types | obj + subj + tangential | **5** (+ adversarial, multi-turn, comparative) |
@@ -181,6 +181,43 @@ providers including Ollama, OpenRouter, Together, Groq, Mistral,
 Cohere, Vertex, Bedrock), and a **mock** model for offline CI. Adding
 a new provider is ~30-60 lines — see
 [`cab_ff/providers/`](cab_ff/providers/).
+
+## Dataset statistics
+
+The assembled `data/CAB_FF_v3_dataset.json` contains **1,056
+questions** covering all 8 dimensions and all 5 question types.
+The builder enforces no duplicates across the seed and banks.
+
+```
+1,056 questions
+  by_dimension:
+    Faith & Spirituality:             485
+    Vocation & Witness:               105
+    Character & Virtue:                94
+    Financial & Material Stewardship:  79
+    Meaning & Purpose:                 79
+    Close Social Relationships:        76
+    Happiness & Life Satisfaction:     71
+    Mental & Physical Health:          67
+  by_type:
+    objective:    680    subjective:   166    adversarial:  120
+    comparative:   48    multi_turn:    42
+  by_tradition:
+    Cross-Tradition: 799    Catholic:    54    Reformed:    32
+    Orthodox:         30    Lutheran:    29    Anglican:    26
+    Pentecostal:      25    Methodist:   24    Baptist:     21
+    Evangelical:      16
+  by_difficulty:
+    L1: 192    L2: 464    L3: 400
+```
+
+The dataset is **assembled** from a 80-question hand-authored seed
+(`data/CAB_FF_v3_seed.json`) plus per-dimension and cross-cutting
+question banks under `cab_ff/banks/`. Rebuild any time with:
+
+```bash
+python scripts/build_dataset.py    # or: make build
+```
 
 ## CLI reference
 
