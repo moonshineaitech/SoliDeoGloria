@@ -10,3 +10,10 @@ build/
 dist/
 .venv/
 .env
+
+# CAB-FF runtime artifacts
+examples/.quickstart_sample.json
+quickstart_results.json
+*_results.json
+results/baselines/*.json
+!results/baselines/.gitkeep

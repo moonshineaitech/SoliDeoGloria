@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+title: "CAB-FF: The Flourishing & Faithfulness Benchmark"
+message: "If you use this benchmark, please cite it as below."
+type: software
+version: "3.0.0"
+date-released: 2026-05-14
+authors:
+  - name: "Soli Deo Gloria Research Initiative"
+    affiliation: "Eldest AI LLC dba GoldRock AI"
+repository-code: "https://github.com/moonshineaitech/solideogloria"
+url: "https://SoliDeoGloria.ai"
+license: CC-BY-SA-4.0
+keywords:
+  - benchmark
+  - artificial-intelligence
+  - large-language-models
+  - christian-theology
+  - alignment
+  - evaluation
+  - human-flourishing
+abstract: >
+  CAB-FF (Christian AI Benchmark — Flourishing & Faithfulness Edition)
+  is an open evaluation framework for measuring how LLMs engage
+  Christian theology, pastoral care, ethics, and denominational
+  diversity. It covers 820+ questions across 8 dimensions and 7
+  transverse "faithfulness axes" using 5 question types (objective,
+  subjective, adversarial drift probes, multi-turn pushback
+  dialogues, and Christian-vs-neutral comparative pairs). A 9-persona
+  tradition-aware judge panel and 40 binary alignment indicators
+  produce per-question scores, which are composed via two geometric
+  means into a Flourishing Score and a Faithfulness Index, blended
+  into a single CAB-FF Score on a 0-100 scale. Explicit Drift and
+  Sycophancy indices are reported as standalone secondary metrics.
+  CAB-FF is the open counterpart to Gloo's privately-held FAI-C
+  benchmark (Dec 2025); all methodology, code, prompts, judges, and
+  data are released under CC BY-SA 4.0.

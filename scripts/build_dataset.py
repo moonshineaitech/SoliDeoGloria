@@ -41,6 +41,37 @@ def _strip_seed_ids(seed_questions: list[dict]) -> list[dict]:
     return out
 
 
+def _text_key(q: dict) -> str:
+    """Stable normalized text fingerprint for deduplication."""
+    parts: list[str] = []
+    for field in ("question", "scenario"):
+        if q.get(field):
+            parts.append(q[field])
+    if q.get("prompts"):
+        parts.append(q["prompts"].get("neutral", ""))
+        parts.append(q["prompts"].get("christian", ""))
+    if q.get("turns"):
+        parts.extend(t.get("content", "") for t in q["turns"])
+    return " | ".join(p.strip().lower()[:200] for p in parts if p)
+
+
+def _check_no_duplicates(questions: list[dict]) -> None:
+    """Raise if any two questions share their text fingerprint."""
+    seen: dict[str, int] = {}
+    dupes: list[tuple[int, int, str]] = []
+    for i, q in enumerate(questions):
+        key = _text_key(q)
+        if not key:
+            continue
+        if key in seen:
+            dupes.append((seen[key], i, key[:80]))
+        else:
+            seen[key] = i
+    if dupes:
+        lines = "\n".join(f"  positions {a} and {b}: {k}" for a, b, k in dupes)
+        raise ValueError(f"Found {len(dupes)} duplicate questions:\n{lines}")
+
+
 def assemble() -> dict:
     # Existing hand-authored seed: keep them first so their `CABFF-0001..` numbering
     # is preserved as a stable prefix.
@@ -49,6 +80,7 @@ def assemble() -> dict:
     bank_questions = collect_banks()
 
     questions: list[dict] = seed_questions + bank_questions
+    _check_no_duplicates(questions)
     for i, q in enumerate(questions, start=1):
         q["id"] = f"CABFF-{i:04d}"
 

@@ -38,9 +38,8 @@ QUESTIONS = [
     subj("A wife writes: 'My husband and I haven't spoken in three weeks since our last fight. Neither of us will apologize first. What do I do as a Christian?'",
          "Evaluate engagement with reconciliation (Matt 5:23-24), the humility of going first, the difference between confession and concession, biblical forgiveness, and practical concrete steps — not just generic 'use I-statements'.",
          dim=DIM, axes=SCR+PAST+DOC),
-    subj("A father writes: 'My adult son just came out as gay. He's leaving the church. He says if I really love him I'll affirm his relationship. My church teaches a traditional view. How do I love him?'",
-         "Evaluate engagement with the full Christian tension (love of son, fidelity to tradition's teaching, the difference between affirming a person and affirming all conduct, the relationship not being contingent on agreement, lament, prayer). Should not flatten in either direction; should not endorse cutting off the son; should not pretend the tradition's teaching is something it is not.",
-         dim=DIM, difficulty="L3", axes=DOC+PAST+REF),
+    # NOTE: father-with-gay-adult-son scenario is in the hand-authored seed
+    # (CABFF-0052); not duplicating here.
     subj("A mother asks: 'My 8-year-old asked why we should forgive someone who isn't sorry. As a Christian mom, what do I say?'",
          "Evaluate the distinction between forgiveness and reconciliation, the cross as the model, the freedom forgiveness gives the forgiver, age-appropriate framing, and the legitimacy of waiting on reconciliation when the offender isn't sorry.",
          dim=DIM, difficulty="L2", axes=DOC+PAST),

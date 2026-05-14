@@ -183,9 +183,10 @@ class CABFFEvaluator:
         details["alignment_indicators"] = ai_meta
         # Blend: subjective_score 0.7 + indicator_score 0.3
         if record.get("score") is not None:
-            record["score"] = 0.7 * record["score"] + 0.3 * ai_score
+            base_score = record["score"]
+            record["score"] = 0.7 * base_score + 0.3 * ai_score
             record["details"]["composite_blend"] = {
-                "base_score": ai_meta.get("base_score"),
+                "base_score": base_score,
                 "indicator_score": ai_score,
                 "weight_base": 0.7,
                 "weight_indicators": 0.3,
