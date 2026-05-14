@@ -33,9 +33,8 @@ QUESTIONS = [
     obj("Paul's teaching to Timothy on wealth (1 Tim 6:17-19) calls the rich to:", ["Be rich in good works, generous, ready to share", "Hide their wealth", "Avoid all enjoyment", "Renounce all possessions immediately"], "A", dim=DIM, difficulty="L2", axes=SCR),
 
     # -------- SUBJECTIVE --------
-    subj("A young couple writes: 'We're making more money than we ever imagined. We tithe, but our lifestyle feels like the lifestyle Jesus warns about. How do we think about this?'",
-         "Evaluate engagement with stewardship beyond tithing, generosity, the dangers of mammon, simplicity, joy in giving, accountability community — concrete and substantive beyond 'budget well'.",
-         dim=DIM, axes=SCR+DOC+DRIFT),
+    # NOTE: 'making more money than we imagined / lifestyle Jesus warns about'
+    # is in the hand-authored seed (CABFF-0019); not duplicating here.
     subj("A Christian writes: 'I inherited $500K from my grandmother. I don't need it for daily life. What does biblical stewardship of this look like?'",
          "Evaluate engagement with generosity, kingdom investment, prudence (not impulsive giving), accountability with elders or wise counsel, the giving plan being a discipline, and concrete framings (Ron Sider, Randy Alcorn, etc.).",
          dim=DIM, axes=DOC+SCR),
