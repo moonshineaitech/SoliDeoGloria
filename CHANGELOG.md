@@ -23,10 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   distinctively Christian, with detection hints.
 - **Composite scoring**: CAB-FF = sqrt(Flourishing Score x Faithfulness
   Index); plus secondary Drift Index and Sycophancy Index.
-- 80-question seed dataset (`data/CAB_FF_v3_seed.json`) spanning all
-  8 dimensions and 5 question types, with adversarial probes directly
-  targeting the failure modes Gloo's December 2025 FAI-C release
-  publicly identified.
+- **820-question assembled dataset** (`data/CAB_FF_v3_dataset.json`,
+  rebuildable via `scripts/build_dataset.py`). Larger than Gloo's
+  privately-held 807-question FAI-C set. Built from a 80-question
+  hand-authored seed plus per-dimension and cross-cutting question
+  banks under `cab_ff/banks/`. All 820 records validate against the
+  v3 schema. Distribution:
+    - Faith 385, Vocation & Witness 88, Character 82, Relationships 70,
+      Health 61, Stewardship 45, Happiness 44, Meaning 41.
+    - Objective 525, Subjective 124, Adversarial 104, Multi-turn 28,
+      Comparative 39.
 - Full methodology, schema, dimensions, Gloo-comparison, and
   adversarial-probe documentation under `docs/`.
 - New CLI: `python -m cab_ff.cli` with subcommands `validate`,

@@ -2,6 +2,7 @@
 
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 [![Version](https://img.shields.io/badge/Version-3.0.0-blueviolet.svg)]()
+[![Questions](https://img.shields.io/badge/Questions-820-red.svg)]()
 [![Dimensions](https://img.shields.io/badge/Dimensions-8-green.svg)]()
 [![Axes](https://img.shields.io/badge/Faithfulness%20Axes-7-orange.svg)]()
 [![Types](https://img.shields.io/badge/Question%20Types-5-blue.svg)]()
@@ -15,6 +16,7 @@ Benchmark** (December 2025).
 
 | | Gloo FAI-C | **CAB-FF v3.0** |
 |---|---|---|
+| Question count | 807 (private) | **820 (published)** |
 | Dimensions | 7 | **8** (+ Vocation & Witness) |
 | Cross-cutting faithfulness axes | implicit | **7 explicit, scored** |
 | Question types | obj + subj + tangential | **5: + adversarial, multi-turn, comparative** |
@@ -141,12 +143,28 @@ cab_ff/                          # v3.0 package
   evaluator.py                   # CABFFEvaluator orchestrator
   loader.py                      # schema validation
   cli.py                         # python -m cab_ff.cli
+  banks/                         # question banks (per dimension + cross-cutting)
+    bank_faith.py                #   - Faith & Spirituality
+    bank_character.py            #   - Character & Virtue
+    bank_witness.py              #   - Vocation & Witness (NEW)
+    bank_relationships.py        #   - Close Social Relationships
+    bank_health.py               #   - Mental & Physical Health
+    bank_happiness.py            #   - Happiness & Life Satisfaction
+    bank_meaning.py              #   - Meaning & Purpose
+    bank_stewardship.py          #   - Financial & Material Stewardship
+    bank_cross_cutting.py        #   - drift / sycophancy / refusal probes
+    bank_extras.py / extras_two  #   - additional objective coverage
+    _helpers.py                  #   - obj() subj() adv() multi() comp() U()
 
 cab_benchmark/                   # v2.0 package (preserved)
 
 data/
-  CAB_FF_v3_seed.json            # 80-question seed dataset
+  CAB_FF_v3_dataset.json         # 820-question assembled dataset (v3.0)
+  CAB_FF_v3_seed.json            # 80-question hand-authored seed
   CAB_v2_Dataset_965.json        # v2.0 dataset (preserved)
+
+scripts/
+  build_dataset.py               # assembles banks + seed -> dataset JSON
 
 docs/
   CAB_FF_METHODOLOGY.md
@@ -166,32 +184,64 @@ tests/
   test_loader.py                 (v2.0)
 ```
 
-## Seed Dataset Statistics
+## Dataset Statistics (assembled, v3.0)
+
+The assembled dataset at `data/CAB_FF_v3_dataset.json` contains
+**820 questions** (more than Gloo's 807) covering all 8 dimensions
+and all 5 question types:
 
 ```
-80 questions
+820 questions
   by_dimension:
-    Character & Virtue:               11
-    Close Social Relationships:        7
-    Faith & Spirituality:             28
-    Financial & Material Stewardship:  5
-    Happiness & Life Satisfaction:     5
-    Meaning & Purpose:                 4
-    Mental & Physical Health:          8
-    Vocation & Witness:               12
+    Character & Virtue:                84
+    Close Social Relationships:        72
+    Faith & Spirituality:             385
+    Financial & Material Stewardship:  45
+    Happiness & Life Satisfaction:     44
+    Meaning & Purpose:                 41
+    Mental & Physical Health:          61
+    Vocation & Witness:                88
   by_type:
-    adversarial:  19
-    comparative:  11
-    multi_turn:    7
-    objective:    17
-    subjective:   26
+    objective:    525
+    subjective:   124
+    adversarial:  104
+    multi_turn:    28
+    comparative:   39
+  by_tradition:
+    Cross-Tradition:  675
+    Catholic:          53
+    Reformed:          32
+    Orthodox:          16
+    Lutheran:          13
+    Pentecostal:        9
+    Anglican:           8
+    Methodist:          7
+    Baptist:            4
+    Evangelical:        3
   by_difficulty:
-    L1:  7   L2: 44   L3: 29
+    L1: 144   L2: 378   L3: 298
 ```
 
-The v3.1 target is 1500+ questions, built with the seed set as a
-template. Contributions welcome — see
-[`docs/CAB_FF_SCHEMA.md`](docs/CAB_FF_SCHEMA.md) and
+### How the dataset is built
+
+The 820-question dataset is **assembled** from the 80-question
+hand-authored seed (`data/CAB_FF_v3_seed.json`) plus a set of
+per-dimension and cross-cutting question banks under `cab_ff/banks/`.
+Rebuild any time with:
+
+```bash
+python scripts/build_dataset.py
+```
+
+This regenerates `data/CAB_FF_v3_dataset.json` with sequential
+`CABFF-NNNN` IDs and validates every record against the schema.
+
+### Roadmap
+
+The v3.1 target is 1500+ questions. To contribute, add a Python file
+under `cab_ff/banks/bank_<topic>.py` exporting a `QUESTIONS` list using
+the helper constructors in `cab_ff/banks/_helpers.py`, then rerun the
+builder. See [`docs/CAB_FF_SCHEMA.md`](docs/CAB_FF_SCHEMA.md) and
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Citation
