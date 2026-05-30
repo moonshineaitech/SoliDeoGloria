@@ -1,35 +1,53 @@
-.PHONY: help dry-run data sft dpo grpo eval gate quantize publish clean install gpu-install
+.PHONY: help dry-run data sft dpo grpo iterate best-of-n eval drilldown gate quantize publish clean install gpu-install
 .DEFAULT_GOAL := help
 
 # Defaults — override on the command line, e.g. `make sft CONFIG=...`
-CONFIG       ?= configs/sft_qwen3_5_27b.yaml
-DPO_CONFIG   ?= configs/dpo_qwen3_5_27b.yaml
-GRPO_CONFIG  ?= configs/grpo_qwen3_5_27b.yaml
-CHECKPOINT   ?= outputs/sdg-27b-dpo
-HF_REPO      ?= solideogloria/sdg-27b-v0.1
+CONFIG       ?= configs/sft_gemma_4_31b.yaml
+DPO_CONFIG   ?= configs/dpo_gemma_4_31b.yaml
+GRPO_CONFIG  ?= configs/grpo_gemma_4_31b.yaml
+CHECKPOINT   ?= outputs/sdg-31b-dpo
+HF_REPO      ?= solideogloria/sdg-31b-v0.1
 TEACHER      ?= claude-opus-4-7
+JUDGE        ?= claude-opus-4-7
 DATA_OUT     ?= data/built
 DATASET      ?= ../data/CAB_FF_v3_dataset.json
+ROUNDS       ?= 3
+BASE_CKPT    ?= outputs/sdg-31b-dpo
+ITER_OUT     ?= outputs/sdg-31b-iter
 
 help:
 	@echo "CAB-FF Trainer — common tasks"
 	@echo ""
-	@echo "  make install        Install core (data pipeline only, no GPU deps)"
-	@echo "  make gpu-install    Install full GPU stack (Torch, TRL, PEFT, Liger)"
-	@echo "  make dry-run        Verify the whole pipeline on tiny synthetic data"
-	@echo "                      (~3 min, no GPU, no API key required)"
+	@echo "  SETUP"
+	@echo "    make install        Install core (data pipeline only, no GPU)"
+	@echo "    make gpu-install    Install GPU stack (Torch, TRL, PEFT, Liger)"
 	@echo ""
-	@echo "  make data           Generate SFT + DPO training data from CAB-FF"
-	@echo "                      schema (uses TEACHER=\$$TEACHER, default $(TEACHER))"
-	@echo "  make sft            Run SFT  (default: CONFIG=$(CONFIG))"
-	@echo "  make dpo            Run DPO  (default: CONFIG=$(DPO_CONFIG))"
-	@echo "  make grpo           Run GRPO (default: CONFIG=$(GRPO_CONFIG))"
-	@echo "  make eval           Run CAB-FF against CHECKPOINT=$(CHECKPOINT)"
-	@echo "  make gate           Compare CHECKPOINT to base model, gate promotion"
-	@echo "  make quantize       Produce AWQ INT4 + GGUF Q4_K_M from CHECKPOINT"
-	@echo "  make publish        Push CHECKPOINT to HF Hub (HF_REPO=$(HF_REPO))"
+	@echo "  DRY RUN (no GPU, no API key — ~3 min sanity check)"
+	@echo "    make dry-run"
 	@echo ""
-	@echo "  make clean          Remove caches, intermediates, dry-run artifacts"
+	@echo "  BASIC PIPELINE"
+	@echo "    make data           Generate SFT + DPO training data from CAB-FF"
+	@echo "                          (uses TEACHER=$(TEACHER))"
+	@echo "    make sft            SFT  (default: $(CONFIG))"
+	@echo "    make dpo            DPO with SimPO loss"
+	@echo "    make eval           Run CAB-FF on CHECKPOINT=$(CHECKPOINT)"
+	@echo "    make gate           Compare CHECKPOINT to base, gate promotion"
+	@echo "    make quantize       AWQ INT4 + GGUF Q4_K_M from CHECKPOINT"
+	@echo "    make publish        Push CHECKPOINT to HF Hub"
+	@echo ""
+	@echo "  GROWTH-HACK TARGETS (see IMPROVEMENTS.md)"
+	@echo "    make iterate        Multi-round refinement (ROUNDS=$(ROUNDS))"
+	@echo "                          targets weakest dim/axis each round"
+	@echo "    make best-of-n      Best-of-N rejection sampling -> SFT data"
+	@echo "    make drilldown      Per-dimension/axis drilldown of a report"
+	@echo "    make grpo           Online RL with CAB-FF reward (most expensive)"
+	@echo ""
+	@echo "  Override base model:"
+	@echo "    make sft CONFIG=configs/sft_gemma_4_e4b.yaml      # consumer GPU"
+	@echo "    make sft CONFIG=configs/sft_qwen3_6_27b.yaml      # Qwen alternative"
+	@echo "    make sft CONFIG=configs/sft_deepseek_v4_flash.yaml # frontier MoE (4-8x H100)"
+	@echo "    make sft CONFIG=configs/sft_glm_5_1.yaml           # frontier agentic"
+	@echo "    make sft CONFIG=configs/sft_kimi_k2_6.yaml         # frontier reasoning"
 
 install:
 	pip install -e .
@@ -64,17 +82,39 @@ dpo:
 grpo:
 	python -m trainer.train.grpo --config $(GRPO_CONFIG) --data-dir $(DATA_OUT)
 
+iterate:
+	python -m trainer.train.iterate \
+	    --base-checkpoint $(BASE_CKPT) \
+	    --rounds $(ROUNDS) \
+	    --min-delta 2.0 \
+	    --out $(ITER_OUT) \
+	    --dataset $(DATASET) \
+	    --teacher $(TEACHER) \
+	    --judge $(JUDGE)
+
+best-of-n:
+	python -m trainer.train.best_of_n \
+	    --checkpoint $(CHECKPOINT) \
+	    --prompts-file $(DATA_OUT)/grpo_prompts.jsonl \
+	    --rollouts 8 --top-k 1 \
+	    --judge $(JUDGE) \
+	    --out $(DATA_OUT)/bon_top1.jsonl
+
 eval:
 	python -m trainer.eval.run_cab_ff \
 	    --checkpoint $(CHECKPOINT) \
 	    --dataset $(DATASET) \
-	    --judge $(TEACHER) \
+	    --judge $(JUDGE) \
 	    --out $(CHECKPOINT)/cab_ff_report.json
+
+drilldown:
+	python -m trainer.eval.per_dimension_drilldown \
+	    --report $(CHECKPOINT)/cab_ff_report.json
 
 gate:
 	python -m trainer.eval.gating \
 	    --checkpoint-report $(CHECKPOINT)/cab_ff_report.json \
-	    --baseline-report baselines/qwen3_5_27b_base_report.json
+	    --baseline-report baselines/gemma_4_31b_base_report.json
 
 quantize:
 	python -m trainer.deploy.quantize_awq --checkpoint $(CHECKPOINT)

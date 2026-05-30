@@ -95,38 +95,84 @@ def main() -> int:
         model_kwargs["quantization_config"] = bnb_config
     model = AutoModelForCausalLM.from_pretrained(cfg["model"]["base_model"], **model_kwargs)
 
-    # ---- LoRA / PEFT ----
-    lora_cfg = cfg.get("lora", {})
+    # ---- PEFT (DoRA / LoRA / Spectrum) ----
+    # Config schema: prefer `peft:` block (new). Fall back to legacy `lora:`.
+    peft_cfg_dict = cfg.get("peft") or cfg.get("lora", {})
     peft_config = None
-    if lora_cfg.get("enabled"):
+    use_dora = False
+    if peft_cfg_dict and (peft_cfg_dict.get("enabled", True) is not False):
         from peft import LoraConfig
+        method = (peft_cfg_dict.get("method") or
+                  ("dora" if peft_cfg_dict.get("dora") else "lora")).lower()
+        use_dora = method == "dora"
         peft_config = LoraConfig(
-            r=lora_cfg.get("r", 64),
-            lora_alpha=lora_cfg.get("alpha", 128),
-            lora_dropout=lora_cfg.get("dropout", 0.05),
-            target_modules=lora_cfg.get(
+            r=peft_cfg_dict.get("r", 64),
+            lora_alpha=peft_cfg_dict.get("alpha", 128),
+            lora_dropout=peft_cfg_dict.get("dropout", 0.05),
+            target_modules=peft_cfg_dict.get(
                 "target_modules",
                 ["q_proj", "k_proj", "v_proj", "o_proj",
                  "gate_proj", "up_proj", "down_proj"],
             ),
             bias="none",
-            task_type=lora_cfg.get("task_type", "CAUSAL_LM"),
-            modules_to_save=lora_cfg.get("modules_to_save", []),
+            task_type=peft_cfg_dict.get("task_type", "CAUSAL_LM"),
+            modules_to_save=peft_cfg_dict.get("modules_to_save", []),
+            use_dora=use_dora,                  # DoRA toggle (peft >= 0.10)
         )
+        print(f"[sft] PEFT method: {'DoRA' if use_dora else 'LoRA'} "
+              f"r={peft_config.r} alpha={peft_config.lora_alpha}")
 
-    # ---- Liger kernels ----
+    # ---- NEFTune (noisy embeddings) ----
+    neftune_alpha = (cfg.get("neftune") or {}).get("alpha") \
+        if (cfg.get("neftune") or {}).get("enabled") else None
+    if neftune_alpha:
+        print(f"[sft] NEFTune enabled (alpha={neftune_alpha})")
+
+    # ---- Liger kernels (model-family-aware) ----
     if (cfg.get("liger_kernel") or {}).get("enabled"):
         try:
-            from liger_kernel.transformers import apply_liger_kernel_to_qwen2
-            apply_liger_kernel_to_qwen2(
-                rope=cfg["liger_kernel"].get("rope", True),
-                rms_norm=cfg["liger_kernel"].get("rms_norm", True),
-                swiglu=cfg["liger_kernel"].get("swiglu", True),
-                cross_entropy=cfg["liger_kernel"].get("cross_entropy", True),
-                fused_linear_cross_entropy=cfg["liger_kernel"].get(
-                    "fused_linear_cross_entropy", True),
-            )
-            print("[sft] applied Liger kernels.")
+            base_id = cfg["model"]["base_model"].lower()
+            # Pick the matching apply_liger_kernel_to_<family> function
+            applied = False
+            try:
+                if "qwen" in base_id:
+                    from liger_kernel.transformers import apply_liger_kernel_to_qwen2
+                    apply_liger_kernel_to_qwen2(
+                        rope=cfg["liger_kernel"].get("rope", True),
+                        rms_norm=cfg["liger_kernel"].get("rms_norm", True),
+                        swiglu=cfg["liger_kernel"].get("swiglu", True),
+                        cross_entropy=cfg["liger_kernel"].get("cross_entropy", True),
+                        fused_linear_cross_entropy=cfg["liger_kernel"].get(
+                            "fused_linear_cross_entropy", True),
+                    )
+                    applied = True
+                elif "gemma" in base_id:
+                    from liger_kernel.transformers import apply_liger_kernel_to_gemma2
+                    apply_liger_kernel_to_gemma2(
+                        rope=cfg["liger_kernel"].get("rope", True),
+                        rms_norm=cfg["liger_kernel"].get("rms_norm", True),
+                        cross_entropy=cfg["liger_kernel"].get("cross_entropy", True),
+                        fused_linear_cross_entropy=cfg["liger_kernel"].get(
+                            "fused_linear_cross_entropy", True),
+                    )
+                    applied = True
+                elif "llama" in base_id:
+                    from liger_kernel.transformers import apply_liger_kernel_to_llama
+                    apply_liger_kernel_to_llama(
+                        rope=cfg["liger_kernel"].get("rope", True),
+                        rms_norm=cfg["liger_kernel"].get("rms_norm", True),
+                        swiglu=cfg["liger_kernel"].get("swiglu", True),
+                        cross_entropy=cfg["liger_kernel"].get("cross_entropy", True),
+                        fused_linear_cross_entropy=cfg["liger_kernel"].get(
+                            "fused_linear_cross_entropy", True),
+                    )
+                    applied = True
+            except ImportError:
+                pass
+            if applied:
+                print("[sft] applied Liger kernels.")
+            else:
+                print(f"[sft] no Liger kernel match for {base_id}; using stock ops.")
         except ImportError:
             print("[sft] liger_kernel not installed; continuing without it.")
 
@@ -173,6 +219,8 @@ def main() -> int:
         greater_is_better=tcfg.get("greater_is_better", False),
         report_to=tcfg.get("report_to", ["tensorboard"]),
         seed=tcfg.get("seed", 17),
+        # NEFTune integration — TRL exposes this directly as a config field
+        neftune_noise_alpha=neftune_alpha,
     )
 
     trainer = SFTTrainer(

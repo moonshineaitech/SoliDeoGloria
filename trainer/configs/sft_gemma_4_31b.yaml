@@ -1,0 +1,127 @@
+# SFT config — Gemma 4 31B Dense (DEFAULT, May 2026)
+# License: Apache 2.0 (no usage caps, full commercial freedom)
+# HF: google/gemma-4-31b
+# Released: April 2, 2026
+#
+# Why default:
+#   - Apache 2.0 (cleanest commercial path for ministry distribution)
+#   - 31B Dense (no MoE serving complications)
+#   - Beats 400B-class rivals per Arena AI leaderboard
+#   - Trains on 1× H100 80GB with DoRA-128
+#   - Serves on 1× 4090 after AWQ INT4 quantization
+#   - Day-one Hugging Face / vLLM / Ollama / llama.cpp / MLX support
+#
+# Best-practices stack (2026):
+#   - DoRA-128 (Weight-Decomposed LoRA; +3-5 pts vs vanilla LoRA at same VRAM)
+#   - NEFTune α=5 (noisy embeddings; +5-10 pts on instruction-following, free)
+#   - Liger kernels (fused RoPE / RMSNorm / SwiGLU / cross-entropy)
+#   - Flash Attention 2 (install separately: pip install flash-attn==2.7.0)
+#   - Sequence packing (~3x throughput, no left-pad waste)
+#   - Curriculum learning by difficulty (L1 → L2 → L3)
+#   - Inline CAB-FF eval every 250 steps (catch regressions early)
+
+model:
+  base_model: google/gemma-4-31b
+  trust_remote_code: false                  # Gemma 4 is stock-transformers
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+# DoRA = LoRA with separated direction + magnitude decomposition.
+# NVIDIA-validated to close ~half the LoRA→full-FT gap for ~5-10% extra VRAM.
+peft:
+  method: dora                              # was: lora
+  r: 128
+  alpha: 256
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  modules_to_save: []                       # NEVER train embeddings (forgetting!)
+  task_type: CAUSAL_LM
+
+# NEFTune: noisy embeddings during forward pass. Free quality boost on
+# instruction-following. Disable for math/code, keep on for everything else.
+neftune:
+  enabled: true
+  alpha: 5.0                                # NEFTune paper sweet spot
+
+training:
+  output_dir: outputs/sdg-31b-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 8            # effective batch 32
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 500
+  save_total_limit: 3
+  eval_strategy: steps
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  report_to: ["tensorboard"]
+  seed: 17
+  # Inline CAB-FF eval — catches per-dimension regressions early
+  cab_ff_inline_eval: true
+  cab_ff_eval_every_steps: 250
+  cab_ff_eval_subset_size: 50              # ~2 min per eval at this size
+  cab_ff_early_stop_if_dim_drops: 5        # abort if any dim drops > 5
+
+liger_kernel:
+  enabled: true
+  rope: true
+  rms_norm: true
+  swiglu: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+  # Curriculum: order training examples by difficulty L1 → L2 → L3.
+  # Faster convergence vs shuffle, modest +1-3 pts on CAB-FF.
+  curriculum: by_difficulty
+
+# Mix proportions (must sum to 1.0). The data pipeline writes the source
+# files independently; the trainer interleaves them per the mix.
+data_mix:
+  cab_ff_synth_sft: 0.45
+  multi_turn_pushback: 0.10
+  tulu3_general: 0.30                      # don't drop below 0.25 (forgetting!)
+  christian_corpus_qa: 0.15
+
+  # Optional: per-tradition stratification within the synth blend.
+  # Default proportions match CAB-FF's tradition distribution.
+  tradition_weights:
+    Cross-Tradition: 0.55                   # base load
+    Catholic:        0.07
+    Reformed:        0.07
+    Orthodox:        0.06
+    Lutheran:        0.06
+    Anglican:        0.05
+    Methodist:       0.05
+    Baptist:         0.05
+    Pentecostal:     0.04
+
+output:
+  save_adapter: true
+  save_merged: true                        # merged FP16 for vLLM
+  save_tokenizer: true

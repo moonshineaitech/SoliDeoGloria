@@ -1,0 +1,86 @@
+# SFT config — DeepSeek V4-Pro (1.6T MoE, frontier general, 1M context)
+# License: MIT
+# HF: deepseek-ai/DeepSeek-V4-Pro
+# Released: April 24, 2026
+# 1.6T total / ~49B active per token, 1M context
+# Leads GDPval-AA at 1554; only true 1M-context open-weights model.
+#
+# When to pick: the absolute best open-weight model for production
+# Christian AI, IF you have a full cluster and the budget to run it.
+#
+# WARNING: requires a full multi-node cluster. Realistic minimum:
+# 32× H100 80GB with DeepSpeed ZeRO-3 + Tensor Parallel + attention-only
+# LoRA. Budget multiple thousands of dollars for a single training run.
+
+model:
+  base_model: deepseek-ai/DeepSeek-V4-Pro
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+peft:
+  method: dora
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj]
+  modules_to_save: []
+
+neftune:
+  enabled: true
+  alpha: 5.0
+
+distributed:
+  strategy: deepspeed
+  zero_stage: 3
+  tensor_parallel_size: 4
+  offload_optimizer: cpu
+  offload_param: none
+  gradient_clipping: 1.0
+  config_file: configs/deepspeed/zero3_32xh100.json
+
+training:
+  output_dir: outputs/sdg-v4pro-sft
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  learning_rate: 3.0e-5                     # very low for 1.6T base
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 16384                     # take advantage of long-context base
+  packing: true
+  logging_steps: 5
+  save_steps: 200
+  save_total_limit: 2
+  eval_steps: 200
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+  cab_ff_inline_eval: false
+
+liger_kernel:
+  enabled: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+  curriculum: by_difficulty
+
+data_mix:
+  cab_ff_synth_sft: 0.35
+  multi_turn_pushback: 0.15
+  tulu3_general: 0.30
+  christian_corpus_qa: 0.20
+
+output:
+  save_adapter: true
+  save_merged: false
+  save_tokenizer: true
