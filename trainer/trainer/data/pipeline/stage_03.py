@@ -218,8 +218,9 @@ def synth_preferences(
     out: List[Dict] = []
     from tqdm import tqdm
     import json as json_mod
+    errors: List[str] = []
 
-    for p in tqdm(prompts, desc="pref-gen"):
+    for i, p in enumerate(tqdm(prompts, desc="pref-gen")):
         fail_desc, res_desc = _PROBE_TARGET_DESCRIPTIONS[p.failure_mode]
         builder_user = _BUILDER_PROMPT.format(
             prompt=p.user_text,
@@ -234,7 +235,11 @@ def synth_preferences(
                 "Respond only with the requested JSON.",
                 builder_user,
             )
-        except Exception:
+        except Exception as exc:
+            if len(errors) < 3:
+                msg = f"{type(exc).__name__}: {exc}"
+                errors.append(msg)
+                print(f"\n[stage_03] call {i} failed: {msg}")
             continue
         parsed = _extract_json(raw)
         if not parsed or "chosen" not in parsed or "rejected" not in parsed:
@@ -254,6 +259,14 @@ def synth_preferences(
                 "teacher": teacher,
             },
         })
+    if not out and prompts:
+        cause = (errors[:3] if errors
+                 else "no API errors — all responses failed JSON parsing "
+                      "or chosen/rejected validation")
+        raise RuntimeError(
+            f"stage_03 produced 0 preference pairs from {len(prompts)} prompts. "
+            f"First errors: {cause}"
+        )
     return out
 
 

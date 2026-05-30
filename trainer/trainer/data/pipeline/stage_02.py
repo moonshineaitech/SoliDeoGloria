@@ -39,18 +39,19 @@ def _make_anthropic_teacher(model: str) -> Callable[[str, str], str]:
         raise ImportError(
             "anthropic package required. Install: pip install '.[teachers]'"
         ) from exc
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY is not set. Paste your sk-ant-... key in the "
+            "notebook's STEP 1 (or `export ANTHROPIC_API_KEY=sk-ant-...`)."
+        )
     # max_retries gives exponential backoff on 429/overloaded so a rate-limit
     # blip during a long (~1000-call) build skips fewer examples.
-    client = anthropic.Anthropic(
-        api_key=os.environ.get("ANTHROPIC_API_KEY"),
-        max_retries=6,
-        timeout=120.0,
-    )
-    actual_model = "claude-opus-4-7" if model == "claude-opus-4-7" else model
+    client = anthropic.Anthropic(api_key=key, max_retries=6, timeout=120.0)
 
     def call(system: str, user: str) -> str:
         resp = client.messages.create(
-            model=actual_model,
+            model=model,
             max_tokens=1024,
             temperature=0.7,
             system=system,
@@ -58,21 +59,60 @@ def _make_anthropic_teacher(model: str) -> Callable[[str, str], str]:
         )
         return "".join(b.text for b in resp.content if hasattr(b, "text"))
 
+    # Fail fast: verify auth + model BEFORE running ~1000 calls. This catches
+    # wrong model name / no credit / wrong key in 2 seconds instead of 30 min.
+    try:
+        client.messages.create(
+            model=model, max_tokens=4, system="ok",
+            messages=[{"role": "user", "content": "ok"}],
+        )
+    except anthropic.AuthenticationError as exc:
+        raise RuntimeError(
+            f"Anthropic API rejected your key (401). Check that you pasted "
+            f"the full sk-ant-... key with no extra spaces. Original: {exc}"
+        ) from exc
+    except anthropic.NotFoundError as exc:
+        raise RuntimeError(
+            f"Anthropic API does not recognize model '{model}' for this account. "
+            f"This usually means Opus 4.8 isn't enabled on your workspace yet "
+            f"(it shipped May 28 2026). Try teacher='claude-sonnet-4-6' or "
+            f"'claude-haiku-4-5-20251001' instead. Original: {exc}"
+        ) from exc
+    except anthropic.PermissionDeniedError as exc:
+        raise RuntimeError(
+            f"Anthropic API denied access to '{model}' (403). Likely the model "
+            f"isn't enabled on this workspace. Try a different teacher. "
+            f"Original: {exc}"
+        ) from exc
+    except anthropic.BadRequestError as exc:
+        raise RuntimeError(
+            f"Anthropic API rejected the request format for '{model}'. "
+            f"Original: {exc}"
+        ) from exc
+    except Exception as exc:
+        raise RuntimeError(
+            f"Anthropic smoke test failed before the run started. "
+            f"Real error: {type(exc).__name__}: {exc}"
+        ) from exc
+
     return call
 
 
 def _make_openai_teacher(model: str) -> Callable[[str, str], str]:
     try:
         from openai import OpenAI  # type: ignore
+        import openai as openai_mod
     except ImportError as exc:
         raise ImportError(
             "openai package required. Install: pip install '.[teachers]'"
         ) from exc
-    client = OpenAI(
-        api_key=os.environ.get("OPENAI_API_KEY"),
-        max_retries=6,
-        timeout=120.0,
-    )
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Paste your sk-... key in the "
+            "notebook's STEP 1 (or `export OPENAI_API_KEY=sk-...`)."
+        )
+    client = OpenAI(api_key=key, max_retries=6, timeout=120.0)
 
     def call(system: str, user: str) -> str:
         resp = client.chat.completions.create(
@@ -85,6 +125,27 @@ def _make_openai_teacher(model: str) -> Callable[[str, str], str]:
             ],
         )
         return resp.choices[0].message.content or ""
+
+    try:
+        client.chat.completions.create(
+            model=model, max_tokens=4,
+            messages=[{"role": "user", "content": "ok"}],
+        )
+    except openai_mod.AuthenticationError as exc:
+        raise RuntimeError(
+            f"OpenAI API rejected your key (401). Check the sk-... key. "
+            f"Original: {exc}"
+        ) from exc
+    except openai_mod.NotFoundError as exc:
+        raise RuntimeError(
+            f"OpenAI API does not recognize model '{model}'. Try "
+            f"teacher='gpt-4o-mini' or 'gpt-4o'. Original: {exc}"
+        ) from exc
+    except Exception as exc:
+        raise RuntimeError(
+            f"OpenAI smoke test failed before the run started. "
+            f"Real error: {type(exc).__name__}: {exc}"
+        ) from exc
 
     return call
 
@@ -253,11 +314,15 @@ def generate(
     prompts = _make_prompts(seed, max_examples, rng)
     out: List[Dict] = []
     from tqdm import tqdm
-    for p in tqdm(prompts, desc="teacher"):
+    errors: List[str] = []
+    for i, p in enumerate(tqdm(prompts, desc="teacher")):
         try:
             response = teacher_fn(_SYSTEM_GOLD_RESPONSE, p.user_text)
         except Exception as exc:
-            # Don't crash; skip the example
+            if len(errors) < 3:
+                msg = f"{type(exc).__name__}: {exc}"
+                errors.append(msg)
+                print(f"\n[stage_02] call {i} failed: {msg}")
             continue
         if not _validate_response(p, response, seed):
             continue
@@ -275,4 +340,12 @@ def generate(
                 "teacher": teacher,
             },
         })
+    if not out and prompts:
+        cause = (errors[:3] if errors
+                 else "no API errors — all responses failed _validate_response "
+                      "(drift / refusal / length)")
+        raise RuntimeError(
+            f"stage_02 produced 0 SFT records from {len(prompts)} prompts. "
+            f"First errors: {cause}"
+        )
     return out
