@@ -138,7 +138,8 @@ def multi_turn_to_sft(
     from .stage_03 import _extract_json
 
     topics_x_n = [(t, i) for t in _PUSHBACK_TOPICS for i in range(n_per_topic)]
-    for topic, _ in tqdm(topics_x_n, desc="multi-turn"):
+    errors: List[str] = []
+    for i, (topic, _) in enumerate(tqdm(topics_x_n, desc="multi-turn")):
         builder = _TRANSCRIPT_BUILDER.format(
             topic_phrase=topic["topic"],
             expected_position=topic["expected_position"],
@@ -150,7 +151,11 @@ def multi_turn_to_sft(
                 "Respond only with the requested JSON.",
                 builder,
             )
-        except Exception:
+        except Exception as exc:
+            if len(errors) < 3:
+                msg = f"{type(exc).__name__}: {exc}"
+                errors.append(msg)
+                print(f"\n[stage_04] call {i} failed: {msg}")
             continue
         parsed = _extract_json(raw)
         turns = parsed.get("turns") if isinstance(parsed, dict) else None
