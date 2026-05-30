@@ -121,8 +121,9 @@ def _make_judge(judge_id: str) -> Callable[[str, str], str]:
         client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
         def call(system: str, user: str) -> str:
+            # newest Claude models deprecated `temperature`; omit it.
             resp = client.messages.create(
-                model=judge_id, max_tokens=256, temperature=0.0,
+                model=judge_id, max_tokens=256,
                 system=system, messages=[{"role": "user", "content": user}],
             )
             return "".join(b.text for b in resp.content if hasattr(b, "text"))

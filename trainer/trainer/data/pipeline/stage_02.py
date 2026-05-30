@@ -53,7 +53,6 @@ def _make_anthropic_teacher(model: str) -> Callable[[str, str], str]:
         resp = client.messages.create(
             model=model,
             max_tokens=1024,
-            temperature=0.7,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
