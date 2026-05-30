@@ -110,9 +110,11 @@ def dedup_and_filter(
         for r in records:
             msgs = r.get("messages", [])
             ok = True
+            assistant_words = 0
             for m in msgs:
                 txt = m.get("content", "")
-                if not length_ok(txt):
+                # Max-length and contamination apply to every turn.
+                if len(txt.split()) > max_len_words:
                     ok = False
                     break
                 bad, qid = contaminated(txt)
@@ -120,6 +122,13 @@ def dedup_and_filter(
                     r.setdefault("meta", {})["contamination_match"] = qid
                     ok = False
                     break
+                if m.get("role") == "assistant":
+                    assistant_words += len(txt.split())
+            # Min-length applies to the assistant content only — short user
+            # turns (e.g. "But isn't that legalism?") are legitimate in
+            # multi-turn pushback and must not nuke the whole record.
+            if ok and assistant_words < min_len_words:
+                ok = False
             if ok:
                 out.append(r)
         return out

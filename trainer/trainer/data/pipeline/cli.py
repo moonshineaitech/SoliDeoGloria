@@ -111,17 +111,17 @@ def build_cmd(dataset: str, teacher: str, out: str,
     click.echo(f"[2/7] Generating SFT responses with teacher={teacher} "
                f"(up to {max_synth} examples). This takes time and tokens.")
     sft_records = s02.generate(seed_material, teacher=teacher,
-                               max_examples=max_synth, seed=seed)
+                               max_examples=max_synth, seed_rng=seed)
     _save_jsonl(out_dir / "02_sft_raw.jsonl", sft_records)
 
     click.echo(f"[3/7] Synthesizing preference pairs from adversarial probes "
                f"(up to {max_prefs}).")
     pref_records = s03.synth_preferences(seed_material, teacher=teacher,
-                                         max_examples=max_prefs, seed=seed)
+                                         max_examples=max_prefs, seed_rng=seed)
     _save_jsonl(out_dir / "03_prefs_raw.jsonl", pref_records)
 
     click.echo("[4/7] Converting multi-turn pushback dialogues to SFT format.")
-    multi_turn = s04.multi_turn_to_sft(seed_material, teacher=teacher, seed=seed)
+    multi_turn = s04.multi_turn_to_sft(seed_material, teacher=teacher, seed_rng=seed)
     _save_jsonl(out_dir / "04_multi_turn_sft.jsonl", multi_turn)
 
     click.echo("[5/7] Curating Christian corpus (Scripture / confessions / patristic QA).")

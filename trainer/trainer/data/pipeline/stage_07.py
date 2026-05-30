@@ -30,7 +30,9 @@ def split_and_format(
     for bucket, records in corpus.items():
         sft_pool.extend(records)
     rng.shuffle(sft_pool)
-    n_eval = max(50, int(len(sft_pool) * eval_frac))
+    # Hold out eval_frac for eval, but never take more than 20% and always
+    # leave at least one example for training (small runs must still work).
+    n_eval = max(1, min(int(round(len(sft_pool) * eval_frac)), len(sft_pool) // 5))
     eval_set = sft_pool[:n_eval]
     train_set = sft_pool[n_eval:]
     _write_jsonl(out_dir / "train.jsonl", train_set)
@@ -44,7 +46,7 @@ def split_and_format(
 
     # ---- Preference split ----
     rng.shuffle(prefs)
-    n_pref_eval = max(50, int(len(prefs) * eval_frac))
+    n_pref_eval = max(1, min(int(round(len(prefs) * eval_frac)), len(prefs) // 5))
     _write_jsonl(out_dir / "pref_train.jsonl", prefs[n_pref_eval:])
     _write_jsonl(out_dir / "pref_eval.jsonl", prefs[:n_pref_eval])
 
