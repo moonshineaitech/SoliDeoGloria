@@ -296,7 +296,8 @@ def _extract_json(raw: str) -> Dict:
                 depth -= 1
                 if depth == 0:
                     try:
-                        return _json.loads(raw[start:i + 1])
+                        # strict=False tolerates literal newlines in strings.
+                        return _json.loads(raw[start:i + 1], strict=False)
                     except _json.JSONDecodeError:
                         return {}
     return {}
