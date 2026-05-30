@@ -52,7 +52,7 @@ def _make_anthropic_teacher(model: str) -> Callable[[str, str], str]:
     def call(system: str, user: str) -> str:
         resp = client.messages.create(
             model=model,
-            max_tokens=1024,
+            max_tokens=2500,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
@@ -116,7 +116,7 @@ def _make_openai_teacher(model: str) -> Callable[[str, str], str]:
     def call(system: str, user: str) -> str:
         resp = client.chat.completions.create(
             model=model,
-            max_tokens=1024,
+            max_tokens=2500,
             temperature=0.7,
             messages=[
                 {"role": "system", "content": system},
