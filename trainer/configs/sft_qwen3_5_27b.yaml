@@ -1,0 +1,99 @@
+# SFT config — Qwen3.5-27B (default, production recommendation)
+# License: Apache 2.0
+# HF: Qwen/Qwen3.5-27B
+#
+# Target hardware: 1× NVIDIA H100 PCIe 80GB
+# Expected wall time on H100: 3-5 hours
+# Expected cost: $7-13 on RunPod H100 @ $2.5/hr
+#
+# This config follows May 2026 best practices:
+#   - LoRA-128 (proven to match full FT for instruction-following)
+#   - BF16 weights, gradient checkpointing
+#   - Liger kernels for fused cross-entropy / RMSNorm / RoPE (2-3x speedup)
+#   - Flash Attention 2 (install separately: pip install flash-attn==2.7.0)
+#   - Sequence packing (no left-pad waste; ~3x throughput)
+#   - Cosine LR schedule with 3% warmup
+#   - AdamW 8bit (bnb) for optimizer-state memory savings
+
+model:
+  base_model: Qwen/Qwen3.5-27B
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+lora:
+  enabled: true
+  r: 128
+  alpha: 256
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  task_type: CAUSAL_LM
+  modules_to_save: []      # embeddings stay frozen; saves ~3GB
+
+training:
+  output_dir: outputs/sdg-27b-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 8       # effective batch 32
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 500
+  save_total_limit: 3
+  eval_strategy: steps
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  report_to: ["tensorboard"]
+  seed: 17
+
+# Use Liger kernels for fused ops where available
+liger_kernel:
+  enabled: true
+  rope: true
+  rms_norm: true
+  swiglu: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true     # the big throughput win
+
+data:
+  # Files produced by `make data`
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  # ChatML template; Qwen3.5 uses its own chat template, applied via tokenizer.
+  chat_template: tokenizer_default
+  max_examples: null                   # null = use all
+
+# Mix proportions for the training blend (must sum to 1.0).
+# The data pipeline produces these source files independently;
+# the trainer interleaves them per the mix at training time.
+data_mix:
+  cab_ff_synth_sft: 0.45               # paraphrased CAB-FF-style instructions
+  multi_turn_pushback: 0.10            # held-position dialogues
+  tulu3_general: 0.30                  # broad instruction-following
+  christian_corpus_qa: 0.15            # confessions / Scripture QA pairs
+
+# Where to write the final adapter + merged weights
+output:
+  save_adapter: true
+  save_merged: true                    # merge LoRA -> full-precision safetensors
+  save_tokenizer: true

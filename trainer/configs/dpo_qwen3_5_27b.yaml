@@ -1,0 +1,64 @@
+# DPO config — Qwen3.5-27B SFT checkpoint -> DPO
+# Stacks on top of the SFT adapter. Uses SimPO-style normalized log-ratio
+# loss for stability, which 2025 research showed beats vanilla DPO on
+# adversarial preference data (which is most of ours).
+
+model:
+  base_model: Qwen/Qwen3.5-27B
+  sft_adapter: outputs/sdg-27b-sft     # the LoRA from the SFT stage
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+# Continue training the same LoRA, or merge + add a new one.
+# Continuing is cheaper and tends to retain SFT formatting habits.
+lora:
+  continue_existing: true              # don't create a new adapter
+  # If continue_existing=false, a fresh LoRA-128 is initialized.
+
+training:
+  output_dir: outputs/sdg-27b-dpo
+  loss_type: sigmoid                   # set to "simpo" for length-normalized
+  beta: 0.1                            # KL penalty strength (DPO default)
+  # SimPO-specific (used if loss_type=simpo):
+  simpo_gamma: 0.5
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  learning_rate: 5.0e-6                # MUCH lower than SFT — preference loss is sharp
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_length: 4096
+  max_prompt_length: 2048
+  logging_steps: 5
+  save_steps: 200
+  save_total_limit: 3
+  eval_steps: 100
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  report_to: ["tensorboard"]
+  seed: 17
+
+liger_kernel:
+  enabled: true
+  fused_linear_cross_entropy: false    # DPO needs explicit chosen/rejected logps
+
+data:
+  train_file: pref_train.jsonl         # format: {prompt, chosen, rejected}
+  eval_file: pref_eval.jsonl
+
+# Preference data composition (must sum to 1.0)
+pref_mix:
+  adversarial_resistance_vs_failure: 0.55  # the strongest signal we have
+  comparative_christian_vs_drift: 0.25
+  multi_turn_held_vs_capitulated: 0.20
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true

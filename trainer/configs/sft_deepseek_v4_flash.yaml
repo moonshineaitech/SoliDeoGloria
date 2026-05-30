@@ -1,0 +1,83 @@
+# SFT config — DeepSeek-V4-Flash (frontier-quality MoE, 284B)
+# License: MIT
+# HF: deepseek-ai/DeepSeek-V4-Flash
+# Released: April 24, 2026
+#
+# WARNING: this is the frontier-quality option. 284B parameters (active ~28B
+# per token at inference, but training touches all experts). Realistic
+# minimum: 4× H100 80GB with DeepSpeed ZeRO-3 + LoRA. 8× H100 strongly
+# recommended for reasonable wall times.
+#
+# This is the "I'm building the best Christian AI model open weights have
+# ever seen and I have budget" option. For solo developers, default to
+# Qwen3.5-27B instead.
+
+model:
+  base_model: deepseek-ai/DeepSeek-V4-Flash
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+# MoE LoRA: target only attention + router; MLP experts kept frozen.
+lora:
+  enabled: true
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj]
+  modules_to_save: []
+  # On MoE bases, full-MLP LoRA explodes parameter count (one LoRA per
+  # expert per layer). Attention-only LoRA keeps trainable params ~70M
+  # while still landing the alignment we need.
+
+distributed:
+  strategy: deepspeed
+  zero_stage: 3
+  offload_optimizer: cpu
+  offload_param: none
+  gradient_clipping: 1.0
+  config_file: configs/deepspeed_zero3.json
+
+training:
+  output_dir: outputs/sdg-v4-flash-sft
+  num_train_epochs: 1                   # 1 epoch is enough for a 284B base
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  learning_rate: 8.0e-5                 # lower for very large model
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_steps: 250
+  save_total_limit: 2
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+
+liger_kernel:
+  enabled: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+
+data_mix:
+  cab_ff_synth_sft: 0.40
+  multi_turn_pushback: 0.15
+  tulu3_general: 0.25
+  christian_corpus_qa: 0.20
+
+output:
+  save_adapter: true
+  save_merged: false                    # too big; serve via vLLM + adapter
+  save_tokenizer: true

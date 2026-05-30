@@ -1,0 +1,79 @@
+# SFT config — Qwen3.5-9B (consumer-GPU friendly)
+# License: Apache 2.0
+# HF: Qwen/Qwen3.5-9B
+#
+# Target hardware: 1× 24GB consumer GPU (RTX 4090, RTX 3090, A5000) with
+#                  QLoRA, or 1× A100 40GB with LoRA.
+# Expected wall time: 3-4 hr on 4090 with QLoRA.
+
+model:
+  base_model: Qwen/Qwen3.5-9B
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+# QLoRA: 4-bit base weights via bitsandbytes; LoRA in BF16.
+quantization:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: bfloat16
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+
+lora:
+  enabled: true
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  task_type: CAUSAL_LM
+
+training:
+  output_dir: outputs/sdg-9b-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16      # effective batch 32
+  gradient_checkpointing: true
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optim: paged_adamw_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 4096
+  packing: true
+  logging_steps: 5
+  save_strategy: steps
+  save_steps: 500
+  save_total_limit: 2
+  eval_strategy: steps
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  report_to: ["tensorboard"]
+  seed: 17
+
+liger_kernel:
+  enabled: true
+  rope: true
+  rms_norm: true
+  swiglu: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+
+data_mix:
+  cab_ff_synth_sft: 0.45
+  multi_turn_pushback: 0.10
+  tulu3_general: 0.30
+  christian_corpus_qa: 0.15
+
+output:
+  save_adapter: true
+  save_merged: true                    # merged FP16 safetensors for vLLM
+  save_tokenizer: true

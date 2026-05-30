@@ -1,0 +1,72 @@
+# SFT config — DeepSeek-R1-Distill-Qwen-32B (MIT, reasoning-strong)
+# License: MIT
+# HF: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+#
+# When to pick: when you want strong chain-of-thought theological reasoning.
+# Inherits R1's reasoning via the distill (800k DeepSeek-R1 traces on Qwen
+# 2.5 backbone) while staying MIT-licensed.
+#
+# Target hardware: 1× H100 80GB (LoRA, BF16). For full FT, 4-8× A100/H100.
+# Expected wall time: 4-6 hr on 1× H100.
+
+model:
+  base_model: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+lora:
+  enabled: true
+  r: 128
+  alpha: 256
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  output_dir: outputs/sdg-deepseek-distill-32b-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  learning_rate: 1.5e-4                # slightly lower; reasoning models are sensitive
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_steps: 500
+  save_total_limit: 3
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+
+liger_kernel:
+  enabled: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  # DeepSeek-R1-Distill uses a custom thinking template. Apply via tokenizer.
+  chat_template: tokenizer_default
+
+data_mix:
+  # Slightly higher CAB-FF emphasis since R1 distills have strong general
+  # reasoning baked in; we want to ensure theological specificity is well-
+  # represented.
+  cab_ff_synth_sft: 0.55
+  multi_turn_pushback: 0.15
+  tulu3_general: 0.20
+  christian_corpus_qa: 0.10
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true

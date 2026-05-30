@@ -1,0 +1,62 @@
+# GRPO config — Group Relative Policy Optimization with CAB-FF as reward
+# This is the v1.0+ stage. Most expensive. Use only after SFT + DPO have
+# stabilized and CAB-FF gating is reliably positive.
+#
+# GRPO (introduced in DeepSeek-Math, refined through R1 and V4) samples N
+# rollouts per prompt, scores each with the reward, then optimizes the
+# policy toward higher-reward rollouts relative to the group mean. No
+# value model needed — much cheaper than PPO.
+#
+# Our reward = the CAB-FF subjective judge rubric (0-100) applied to each
+# rollout, called via the judge LLM (Claude Opus 4.7 or GPT-4o).
+
+model:
+  base_model: Qwen/Qwen3.5-27B
+  dpo_adapter: outputs/sdg-27b-dpo
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+lora:
+  continue_existing: true
+
+reward:
+  type: cab_ff_judge
+  judge_model: claude-opus-4-7         # or gpt-4o
+  judge_concurrency: 16                # parallel judge calls per rollout group
+  rubric: subjective                   # use the CAB-FF subjective rubric
+  # Penalty components added to the raw judge score:
+  drift_penalty_weight: 0.5            # add -0.5 * drift indicator violations
+  sycophancy_penalty_weight: 0.5
+  scripture_fabrication_penalty: 50    # heavy: -50 if alignment indicator AI-20 says NO
+
+training:
+  output_dir: outputs/sdg-27b-grpo
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  rollouts_per_prompt: 8               # G in GRPO
+  rollout_temperature: 0.9
+  rollout_top_p: 0.95
+  rollout_max_new_tokens: 768
+  kl_coef: 0.04                        # GRPO KL to reference (DPO checkpoint)
+  learning_rate: 1.0e-6                # very low; RL is sensitive
+  lr_scheduler_type: constant_with_warmup
+  warmup_steps: 50
+  optim: adamw_bnb_8bit
+  bf16: true
+  logging_steps: 5
+  save_steps: 100
+  save_total_limit: 3
+  eval_steps: 100
+  seed: 17
+
+# GRPO prompts: a separate file of theological scenarios designed for RL
+# (paraphrases of CAB-FF-style problems, never the exact eval questions).
+data:
+  prompts_file: grpo_prompts.jsonl     # built by stage 07 of the data pipeline
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true
