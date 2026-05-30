@@ -9,6 +9,12 @@ The reference model produced by this pipeline is:
 
 Pipeline is **base-model-agnostic** — swap by editing one YAML.
 
+> ## 👉 New here? Open **[`START_HERE.md`](START_HERE.md)** first.
+> It's the single idiot-proof front door: a 60-second decision, an
+> accounts checklist, and a 3-phase walkthrough (make data → train →
+> use & share) for both the no-code AutoTrain lane and the one-command
+> GPU lane. Everything else below is reference detail.
+
 > ### ⏱️ Want to actually build this today?
 > Go straight to **[`RUN_TODAY.md`](RUN_TODAY.md)** — a copy-paste,
 > no-experience-required runbook with three budget paths
