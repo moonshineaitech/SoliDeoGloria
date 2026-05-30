@@ -1,0 +1,36 @@
+---
+import { FAILURE_MODES } from "../data/content";
+const labels: Record<string, string> = {
+  drift: "Secular drift",
+  fabrication: "Fabrication",
+  sycophancy: "Sycophancy",
+  refusal: "Refusal mis-calibration",
+};
+---
+
+<section class="section">
+  <div class="max-w-3xl">
+    <p class="eyebrow">What CAB-FF measures</p>
+    <h2 class="h-section mt-2">Today&rsquo;s LLMs drift, fabricate, and capitulate when Christians use them.</h2>
+    <p class="mt-4 text-ink-700 dark:text-ink-200 leading-relaxed">
+      Gloo&rsquo;s December 2025 report flagged it publicly. Frontier models score <strong>48/100 on average</strong> on the Faith dimension of their internal benchmark. CAB-FF probes the specific failure modes directly &mdash; with adversarial drift probes, multi-turn pushback dialogues, and Christian-vs-neutral comparative pairs.
+    </p>
+  </div>
+
+  <div class="mt-10 grid gap-4 md:grid-cols-2">
+    {FAILURE_MODES.map((m) => (
+      <div class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="pill-red">{labels[m.category] ?? m.category}</span>
+          <code class="text-[10px] uppercase tracking-wider text-ink-500 dark:text-ink-400">probe</code>
+        </div>
+        <div class="font-serif text-lg leading-snug">
+          <span class="text-rose-600 dark:text-rose-300 line-through decoration-2">{m.badName}</span>
+          <span class="mx-1 text-ink-400">→</span>
+          <span class="text-emerald-700 dark:text-emerald-300">{m.realName}</span>
+        </div>
+        <p class="text-sm text-ink-600 dark:text-ink-300 leading-relaxed">{m.example}</p>
+      </div>
+    ))}
+  </div>
+</section>

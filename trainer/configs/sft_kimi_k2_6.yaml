@@ -1,0 +1,91 @@
+# SFT config — Kimi K2.6 (Moonshot AI, frontier reasoning MoE)
+# License: Modified MIT (permissive; visible-attribution clause for very
+#          large deployments — verify for your specific use case)
+# HF: moonshotai/Kimi-K2.6
+# Released: April 20, 2026
+# 1T total / ~32B active per token, 256K context
+# AA Intelligence Index v4.0: 54 (nominal #1 open-weight)
+#
+# When to pick: hardest reasoning, deepest agentic chain-of-thought,
+# theological debate / apologetics. Kimi K2.6 leads on the AA Index
+# composite among open weights.
+#
+# WARNING: 1T MoE. Realistic minimum: 16× H100 80GB with DeepSpeed
+# ZeRO-3. Multi-node strongly recommended.
+
+model:
+  base_model: moonshotai/Kimi-K2.6
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+peft:
+  method: dora
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj]   # ATTENTION ONLY (MoE)
+  modules_to_save: []
+
+neftune:
+  enabled: true
+  alpha: 5.0
+
+distributed:
+  strategy: deepspeed
+  zero_stage: 3
+  offload_optimizer: cpu
+  offload_param: none
+  gradient_clipping: 1.0
+  config_file: configs/deepspeed/zero3_16xh100.json
+
+training:
+  output_dir: outputs/sdg-kimi26-sft
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  learning_rate: 4.0e-5                     # very low for 1T base
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_steps: 250
+  save_total_limit: 2
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+  cab_ff_inline_eval: false
+
+liger_kernel:
+  enabled: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+  curriculum: by_difficulty
+
+data_mix:
+  cab_ff_synth_sft: 0.40
+  multi_turn_pushback: 0.20                 # Kimi excels at multi-turn — train more
+  tulu3_general: 0.20
+  christian_corpus_qa: 0.20
+
+# Kimi K2.6 supports "thinking" mode (visible chain-of-thought) — keep
+# the format flexible during training so the model can choose.
+inference_template:
+  thinking_mode: optional
+
+output:
+  save_adapter: true
+  save_merged: false
+  save_tokenizer: true

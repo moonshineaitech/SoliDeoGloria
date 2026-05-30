@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+.cache/
+src/data/demo-questions.json
+*.log
+.DS_Store

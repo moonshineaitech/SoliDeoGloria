@@ -1,0 +1,71 @@
+# SFT config — Llama 4 Scout (10M context, long-context Bible RAG)
+# License: Llama 4 license (commercial-friendly with restrictions; verify
+#          for your use case)
+# HF: meta-llama/Llama-4-Scout
+#
+# When to pick: when your application is whole-Bible / whole-canon RAG and
+# you need genuinely long context. Llama 4 Scout's 10M token context is
+# unique in open weights as of May 2026.
+#
+# Target hardware: 1-2× H100 80GB depending on Scout size (8B vs 32B).
+# Adjust based on the actual Scout variant you're using.
+
+model:
+  base_model: meta-llama/Llama-4-Scout
+  trust_remote_code: false             # Llama 4 is stock-transformers
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+lora:
+  enabled: true
+  r: 128
+  alpha: 256
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  output_dir: outputs/sdg-llama4-scout-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  # NB: do NOT push max_seq_length to 10M during SFT — that's an
+  # inference-time capability. Train at 8192 unless you have a specific
+  # long-context training dataset.
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_steps: 500
+  save_total_limit: 3
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+
+liger_kernel:
+  enabled: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+
+data_mix:
+  cab_ff_synth_sft: 0.45
+  multi_turn_pushback: 0.10
+  tulu3_general: 0.30
+  christian_corpus_qa: 0.15
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true

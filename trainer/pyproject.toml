@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cab-ff-trainer"
+version = "0.1.0"
+description = "Production fine-tuning pipeline for Christian-aligned LLMs, guided by the CAB-FF benchmark"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Soli Deo Gloria Research Initiative", email = "research@solideogloria.ai"}
+]
+keywords = ["llm", "fine-tuning", "rlhf", "dpo", "christian-ai", "alignment"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
+# Core deps for the data pipeline and orchestration. Heavy GPU deps are
+# opt-in via the [gpu] extra so the data pipeline can run on a CPU box.
+dependencies = [
+    "click>=8.0",
+    "datasets>=2.20.0",
+    "huggingface-hub>=0.24.0",
+    "jinja2>=3.1.0",
+    "jsonlines>=4.0.0",
+    "numpy>=1.26.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+# Training-time GPU stack. Install on the GPU box only.
+gpu = [
+    "torch>=2.5.0",
+    "transformers>=4.46.0",
+    "accelerate>=1.0.0",
+    "peft>=0.13.0",
+    "trl>=0.12.0",
+    "bitsandbytes>=0.44.0",
+    "datasets>=3.0.0",
+    "sentencepiece>=0.2.0",
+    "protobuf>=4.25.0",
+    # Speed:
+    "liger-kernel>=0.3.0",
+    # Note: install flash-attn separately with the correct CUDA build:
+    #   pip install flash-attn==2.7.0 --no-build-isolation
+]
+
+# Teacher-model APIs for data generation
+teachers = [
+    "anthropic>=0.45.0",
+    "openai>=1.50.0",
+]
+
+# Eval: run CAB-FF against a checkpoint via vLLM or transformers
+eval = [
+    "vllm>=0.6.0",
+]
+
+# Quantization / deployment
+deploy = [
+    "autoawq>=0.2.0",
+    "llama-cpp-python>=0.3.0",
+]
+
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6.0",
+]
+
+all = [
+    "cab-ff-trainer[gpu,teachers,eval,deploy,dev]",
+]
+
+[project.scripts]
+sdg-data         = "trainer.data.pipeline.cli:main"
+sdg-train-sft    = "trainer.train.sft:main"
+sdg-train-dpo    = "trainer.train.dpo:main"
+sdg-train-grpo   = "trainer.train.grpo:main"
+sdg-eval         = "trainer.eval.run_cab_ff:main"
+sdg-gate         = "trainer.eval.gating:main"
+sdg-quantize     = "trainer.deploy.quantize_gguf:main"
+sdg-publish      = "trainer.deploy.push_to_hub:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["trainer*"]

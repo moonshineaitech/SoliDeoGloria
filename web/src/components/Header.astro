@@ -1,0 +1,65 @@
+---
+import { NAV, SITE } from "../data/site";
+const { pathname } = Astro.props as { pathname?: string };
+const base = import.meta.env.BASE_URL;
+function navHref(href: string) {
+  if (href === "/") return base.replace(/\/$/, "") || "/";
+  return `${base.replace(/\/$/, "")}${href}`;
+}
+function isActive(href: string) {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/" || pathname === "";
+  return pathname.startsWith(href);
+}
+---
+
+<header class="sticky top-0 z-40 border-b border-ink-200/60 bg-ink-50/85 backdrop-blur
+               dark:border-ink-700/60 dark:bg-ink-900/85">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+    <a href={navHref("/")} class="flex items-center gap-2 font-serif text-lg font-semibold text-ink-900 dark:text-ink-50">
+      <span class="grid h-7 w-7 place-items-center rounded-md bg-ink-900 text-xs font-bold text-gold-300 dark:bg-gold-300 dark:text-ink-900">FF</span>
+      <span>CAB-FF</span>
+      <span class="hidden sm:inline pill-gold ml-1">v{SITE.version}</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-1">
+      {NAV.map((item) => (
+        <a
+          href={navHref(item.href)}
+          class:list={[
+            "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            isActive(item.href)
+              ? "text-ink-900 bg-ink-100 dark:text-ink-50 dark:bg-ink-800"
+              : "text-ink-600 hover:text-ink-900 hover:bg-ink-100 dark:text-ink-300 dark:hover:text-ink-50 dark:hover:bg-ink-800",
+          ]}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+    <div class="flex items-center gap-2">
+      <button id="theme-toggle" class="btn-ghost text-xs" aria-label="Toggle theme">
+        <span class="dark:hidden">🌙</span>
+        <span class="hidden dark:inline">☀️</span>
+      </button>
+      <a href={SITE.repo} class="btn-primary text-xs" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+  </div>
+  <details class="md:hidden border-t border-ink-200/60 dark:border-ink-700/60">
+    <summary class="cursor-pointer list-none px-6 py-2 text-sm text-ink-600 dark:text-ink-300">Menu</summary>
+    <div class="grid gap-1 px-6 pb-3">
+      {NAV.map((item) => (
+        <a href={navHref(item.href)} class="rounded-md px-3 py-2 text-sm hover:bg-ink-100 dark:hover:bg-ink-800">{item.label}</a>
+      ))}
+    </div>
+  </details>
+</header>
+
+<script is:inline>
+  const btn = document.getElementById("theme-toggle");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const next = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("cab-ff-theme", next ? "dark" : "light");
+    });
+  }
+</script>

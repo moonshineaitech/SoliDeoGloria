@@ -1,0 +1,59 @@
+---
+import { SITE } from "../data/site";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<section class="relative overflow-hidden border-b border-ink-200/70 dark:border-ink-700/70">
+  <div class="absolute inset-0 -z-10 opacity-30
+              [background-image:radial-gradient(circle_at_top_right,rgba(236,187,78,0.18),transparent_55%),radial-gradient(circle_at_bottom_left,rgba(83,79,71,0.18),transparent_55%)]
+              dark:opacity-50"></div>
+
+  <div class="section grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+    <div class="space-y-7">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="pill-gold">v{SITE.version} • Production ready</span>
+        <span class="pill">CC BY-SA 4.0</span>
+        <span class="pill-green">{SITE.testCount} tests passing</span>
+      </div>
+      <h1 class="h-display">
+        The open <span class="italic text-gold-700 dark:text-gold-300">Christian AI</span> benchmark.
+      </h1>
+      <p class="max-w-2xl text-lg leading-relaxed text-ink-700 dark:text-ink-200">
+        {SITE.questionCount.toLocaleString()} hand-curated questions across <strong>8 dimensions</strong>, scored by a <strong>9-persona, tradition-aware judge panel</strong>, with explicit <strong>Drift</strong> and <strong>Sycophancy</strong> indices. The open, reproducible counterpart to Gloo&rsquo;s privately-held FAI-C benchmark.
+      </p>
+      <div class="flex flex-wrap items-center gap-3">
+        <a href={`${base}/try`} class="btn-primary">Run a live demo →</a>
+        <a href={SITE.repo} class="btn-ghost" target="_blank" rel="noreferrer">Get the code</a>
+        <a href={`${base}/methodology`} class="btn-ghost">Read methodology</a>
+      </div>
+      <p class="text-xs text-ink-500 dark:text-ink-400">
+        Plug-and-play adapters for <strong>Anthropic</strong>, <strong>OpenAI</strong>, and <strong>~100 providers</strong> via LiteLLM (incl. local Ollama).
+      </p>
+    </div>
+
+    <div class="card font-mono text-xs leading-relaxed text-ink-700 dark:text-ink-100 overflow-x-auto">
+      <div class="flex items-center gap-2 mb-3 text-[10px] uppercase tracking-wider text-ink-500 dark:text-ink-400">
+        <span class="h-2 w-2 rounded-full bg-rose-400"></span>
+        <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+        <span class="ml-2">report.json — sample CAB-FF output</span>
+      </div>
+<pre class="whitespace-pre"><code><span class="text-ink-400">{</span>
+  <span class="text-gold-600 dark:text-gold-300">"cab_ff_score"</span>:        <span class="text-emerald-600 dark:text-emerald-300">67.8</span>,
+  <span class="text-gold-600 dark:text-gold-300">"flourishing_score"</span>:    <span class="text-emerald-600 dark:text-emerald-300">71.5</span>,
+  <span class="text-gold-600 dark:text-gold-300">"faithfulness_index"</span>:   <span class="text-emerald-600 dark:text-emerald-300">64.2</span>,
+  <span class="text-gold-600 dark:text-gold-300">"drift_index"</span>:          <span class="text-rose-600 dark:text-rose-300">18.4</span>,
+  <span class="text-gold-600 dark:text-gold-300">"sycophancy_index"</span>:     <span class="text-rose-600 dark:text-rose-300">12.1</span>,
+  <span class="text-gold-600 dark:text-gold-300">"by_dimension"</span>: <span class="text-ink-400">&#123;</span>
+    <span class="text-gold-600 dark:text-gold-300">"Faith &amp; Spirituality"</span>:     <span class="text-emerald-600 dark:text-emerald-300">52.1</span>,
+    <span class="text-gold-600 dark:text-gold-300">"Vocation &amp; Witness"</span>:       <span class="text-emerald-600 dark:text-emerald-300">65.4</span>,
+    <span class="text-gold-600 dark:text-gold-300">"Character &amp; Virtue"</span>:       <span class="text-emerald-600 dark:text-emerald-300">78.2</span>
+  <span class="text-ink-400">&#125;</span>,
+  <span class="text-gold-600 dark:text-gold-300">"by_axis"</span>: <span class="text-ink-400">&#123;</span>
+    <span class="text-gold-600 dark:text-gold-300">"Secular-Drift Resistance"</span>:  <span class="text-emerald-600 dark:text-emerald-300">81.6</span>,
+    <span class="text-gold-600 dark:text-gold-300">"Sycophancy Resistance"</span>:     <span class="text-emerald-600 dark:text-emerald-300">87.9</span>
+  <span class="text-ink-400">&#125;</span>
+<span class="text-ink-400">&#125;</span></code></pre>
+    </div>
+  </div>
+</section>

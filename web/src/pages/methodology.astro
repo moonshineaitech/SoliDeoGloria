@@ -1,0 +1,176 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { DIMENSIONS, AXES, QUESTION_TYPES, JUDGES } from "../data/benchmark";
+---
+
+<Layout title="Methodology" description="How CAB-FF works — pipeline, scoring formula, judge panel." pathname={Astro.url.pathname}>
+  <section class="section">
+    <div class="max-w-3xl">
+      <p class="eyebrow">Methodology</p>
+      <h1 class="h-display mt-2">How CAB-FF works.</h1>
+      <p class="mt-4 text-ink-700 dark:text-ink-200 leading-relaxed">
+        From a JSON question to a CAB-FF score, in five stages. Every choice is documented so you can audit it, replicate it, or push back on it.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-6">The pipeline</h2>
+    <div class="card overflow-x-auto">
+      <pre class="font-mono text-xs leading-relaxed"><code>{`                        ┌─────────────────────────────┐
+                        │  data/CAB_FF_v3_dataset.json│
+                        │   1,056 validated records   │
+                        └──────────────┬──────────────┘
+                                       │ load_dataset()
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │           Loader            │
+                        │   schema validation         │
+                        │   filter by dim/type/etc.   │
+                        └──────────────┬──────────────┘
+                                       │ list[Question]
+                                       ▼
+                        ┌─────────────────────────────┐
+                        │       CABFFEvaluator        │
+                        │   dispatches by type  ──────┼──────────┐
+                        └──────────────┬──────────────┘          │
+                                       │ model_fn(prompt)        │
+                                       ▼                         │
+       ┌─────────────────────────────────────────────────┐       │
+       │ Provider adapter — Anthropic / OpenAI / LiteLLM │       │
+       └──────────────────────────┬──────────────────────┘       │
+                                  │ raw response                 │
+                                  ▼                              ▼
+            ┌─────────────────────────────────────────┐ ┌─────────────┐
+            │            Scorer (one of 5)            │ │ JudgePanel  │
+            │   ObjectiveScorer    (regex extract)    │◄┤ 9 personas  │
+            │   SubjectiveScorer   (judge panel)      │ │             │
+            │   AdversarialScorer  (pattern match)    │ └─────────────┘
+            │   MultiTurnScorer    (consistency)      │
+            │   ComparativeScorer  (drift gap)        │
+            └────────────────────┬────────────────────┘
+                                 │ (score, details)
+                                 ▼
+            ┌─────────────────────────────────────────┐
+            │       AlignmentIndicatorScorer          │
+            │       40 binary YES/NO probes           │
+            │   blend = 0.7 * judge + 0.3 * indicators│
+            └────────────────────┬────────────────────┘
+                                 │ per-question record
+                                 ▼
+                        ┌────────────────────┐
+                        │     Aggregator     │
+                        │  geometric means   │
+                        │  cross-dim + axis  │
+                        └─────────┬──────────┘
+                                  ▼
+       ┌──────────────────────────────────────────────────────┐
+       │   Final report (JSON):                               │
+       │     cab_ff_score, flourishing_score,                 │
+       │     faithfulness_index, drift_index,                 │
+       │     sycophancy_index, by-dimension, by-axis          │
+       └──────────────────────────────────────────────────────┘`}</code></pre>
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-3">Scoring formula</h2>
+    <div class="card font-mono text-sm leading-relaxed">
+      <pre class="overflow-x-auto"><code>{`Flourishing Score (FF)  = ⁸√(chi · rho · eta · mu · psi · phi · sigma · omega)
+Faithfulness Index (FI) = ⁷√(7 transverse axis scores)
+
+CAB-FF Score            = √(FF × FI)
+
+Drift Index             = 100 − mean(drift-related signals)
+                          ─── lower is better ───
+Sycophancy Index        = 100 − mean(sycophancy signals)
+                          ─── lower is better ───`}</code></pre>
+    </div>
+    <p class="mt-4 text-sm text-ink-600 dark:text-ink-300 max-w-3xl">
+      Geometric means appear twice on purpose: a model can&rsquo;t hide a weak Faith dimension behind a strong Health dimension, AND it can&rsquo;t hide weak Secular-Drift Resistance behind strong Pastoral Sensitivity. Both must be high.
+    </p>
+    <p class="mt-2 text-sm text-ink-600 dark:text-ink-300 max-w-3xl">
+      The <code>geometric_mean(values, floor=1.0)</code> floor exists so a literal zero on one dimension doesn&rsquo;t annihilate the entire composite. We document this openly — see <a class="underline" href="https://github.com/moonshineaitech/SoliDeoGloria/blob/main/docs/VALIDATION.md">docs/VALIDATION.md</a>.
+    </p>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-6">8 dimensions</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {DIMENSIONS.map((d) => (
+        <div class="card flex gap-3">
+          <div class="font-serif text-4xl text-gold-600 dark:text-gold-300 leading-none">{d.symbol}</div>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold">{d.name}</h3>
+              <span class="text-[11px] text-ink-500 dark:text-ink-400">{d.count} questions</span>
+            </div>
+            <p class="text-sm text-ink-600 dark:text-ink-300">{d.blurb}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-6">7 faithfulness axes (cross-cutting)</h2>
+    <div class="grid gap-3 md:grid-cols-2">
+      {AXES.map((a) => (
+        <div class="card">
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="font-semibold text-sm">{a.name}</h3>
+            <span class={a.category === "drift" ? "pill-gold" : a.category === "sycophancy" ? "pill-red" : a.category === "refusal" ? "pill-green" : "pill"}>
+              {a.category}
+            </span>
+          </div>
+          <p class="text-sm text-ink-600 dark:text-ink-300">{a.blurb}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-6">5 question types</h2>
+    <div class="space-y-3">
+      {QUESTION_TYPES.map((t) => (
+        <div class="card">
+          <div class="flex flex-wrap items-baseline gap-2 mb-1">
+            <code class="text-xs px-2 py-0.5 rounded bg-ink-100 dark:bg-ink-800">{t.key}</code>
+            <h3 class="font-semibold">{t.name}</h3>
+            <span class="text-xs text-ink-500 dark:text-ink-400">{t.count} questions</span>
+          </div>
+          <p class="text-sm text-ink-600 dark:text-ink-300">{t.desc}</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">Scoring: {t.scoring}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-3">9 judge personas</h2>
+    <p class="text-ink-700 dark:text-ink-200 max-w-3xl mb-6">
+      Theological evaluation is tradition-dependent. We balance the panel across the major historic streams. For tradition-tagged questions, the matching judge is selected plus two cross-tradition judges for balance. All system prompts are published in <a class="underline" href="https://github.com/moonshineaitech/SoliDeoGloria/blob/main/cab_ff/judges.py">cab_ff/judges.py</a>.
+    </p>
+    <div class="grid gap-3 md:grid-cols-2">
+      {JUDGES.map((j) => (
+        <div class="card">
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="font-semibold text-sm">{j.name}</h3>
+            <span class="pill-gold">{j.tradition}</span>
+          </div>
+          <p class="text-sm text-ink-600 dark:text-ink-300">{j.blurb}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section-tight border-t border-ink-200/60 dark:border-ink-700/60">
+    <h2 class="h-section mb-3">40 alignment indicators</h2>
+    <p class="text-ink-700 dark:text-ink-200 max-w-3xl">
+      Every subjective response is also graded against 40 binary YES/NO probes — <strong>12 general</strong> quality probes, <strong>18 distinctively Christian</strong> probes (names-God-not-higher-power, cites-Scripture-accurately, calls-for-repentance, etc.), and <strong>10 anti-failure-mode</strong> probes (sycophancy under pressure, refusal mis-calibration, all-religions-same equivocation). The indicator score is blended at 30% of the per-question score; the judge panel carries 70%.
+    </p>
+    <p class="mt-4 text-sm text-ink-500 dark:text-ink-400">
+      Full list: <a class="underline" href="https://github.com/moonshineaitech/SoliDeoGloria/blob/main/rubrics/cab_ff_alignment_indicators.md">rubrics/cab_ff_alignment_indicators.md</a>
+    </p>
+  </section>
+</Layout>

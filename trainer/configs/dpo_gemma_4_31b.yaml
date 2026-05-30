@@ -1,0 +1,67 @@
+# DPO config — Gemma 4 31B SFT checkpoint → DPO with SimPO loss
+# Continues training the SFT adapter at a much lower LR.
+# Uses SimPO (length-normalized) instead of vanilla DPO for stability
+# on adversarial preference pairs.
+
+model:
+  base_model: google/gemma-4-31b
+  sft_adapter: outputs/sdg-31b-sft
+  trust_remote_code: false
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+peft:
+  continue_existing: true                   # don't create a new adapter
+
+training:
+  output_dir: outputs/sdg-31b-dpo
+  loss_type: simpo                          # length-normalized — more stable
+  beta: 0.1
+  simpo_gamma: 0.5                          # SimPO-specific margin
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16
+  gradient_checkpointing: true
+  learning_rate: 5.0e-6                     # MUCH lower than SFT
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_length: 4096
+  max_prompt_length: 2048
+  logging_steps: 5
+  save_steps: 200
+  save_total_limit: 3
+  eval_steps: 100
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  report_to: ["tensorboard"]
+  seed: 17
+  cab_ff_inline_eval: true
+  cab_ff_eval_every_steps: 100
+  cab_ff_eval_subset_size: 50
+
+# DPO mode collapse prevention
+mode_collapse_guards:
+  max_chosen_rejected_length_ratio: 2.0     # drop pref pairs >2x length difference
+  monitor_diversity: true                   # alert if all responses start identically
+
+liger_kernel:
+  enabled: true
+  fused_linear_cross_entropy: false         # DPO needs explicit chosen/rejected logps
+
+data:
+  train_file: pref_train.jsonl
+  eval_file: pref_eval.jsonl
+
+pref_mix:
+  adversarial_resistance_vs_failure: 0.55   # strongest signal
+  comparative_christian_vs_drift: 0.25
+  multi_turn_held_vs_capitulated: 0.20
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true

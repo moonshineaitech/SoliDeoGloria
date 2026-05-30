@@ -1,0 +1,79 @@
+# SFT config — Qwen 3.6-27B (Apache 2.0 alternative to Gemma 4 31B)
+# License: Apache 2.0
+# HF: Qwen/Qwen3.6-27B
+# Released: Q1 2026
+# 77.2 on SWE-Bench Verified (top Apache-licensed open-weight at this size)
+#
+# When to pick: when you want Qwen-family compatibility (existing
+# Qwen-tooling stack, multilingual emphasis), or if Gemma 4 has any
+# license-clarity issues for your jurisdiction.
+
+model:
+  base_model: Qwen/Qwen3.6-27B
+  trust_remote_code: true
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+peft:
+  method: dora
+  r: 128
+  alpha: 256
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  modules_to_save: []
+
+neftune:
+  enabled: true
+  alpha: 5.0
+
+training:
+  output_dir: outputs/sdg-qwen36-27b-sft
+  num_train_epochs: 2
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  optim: adamw_bnb_8bit
+  bf16: true
+  tf32: true
+  max_seq_length: 8192
+  packing: true
+  logging_steps: 5
+  save_steps: 500
+  save_total_limit: 3
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  seed: 17
+  cab_ff_inline_eval: true
+  cab_ff_eval_every_steps: 250
+  cab_ff_eval_subset_size: 50
+
+liger_kernel:
+  enabled: true
+  rope: true
+  rms_norm: true
+  swiglu: true
+  cross_entropy: true
+  fused_linear_cross_entropy: true
+
+data:
+  train_file: train.jsonl
+  eval_file: eval.jsonl
+  chat_template: tokenizer_default
+  curriculum: by_difficulty
+
+data_mix:
+  cab_ff_synth_sft: 0.45
+  multi_turn_pushback: 0.10
+  tulu3_general: 0.30
+  christian_corpus_qa: 0.15
+
+output:
+  save_adapter: true
+  save_merged: true
+  save_tokenizer: true
