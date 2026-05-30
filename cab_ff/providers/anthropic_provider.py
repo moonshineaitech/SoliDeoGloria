@@ -17,6 +17,18 @@ def _client(api_key: Optional[str] = None) -> "anthropic.Anthropic":
     return anthropic.Anthropic(api_key=api_key or os.environ.get("ANTHROPIC_API_KEY"))
 
 
+def _create(client: "anthropic.Anthropic", **kwargs):
+    """Call messages.create, retrying without `temperature` if the model has
+    deprecated it (newest Claude models, e.g. Opus 4.8, reject the param)."""
+    try:
+        return client.messages.create(**kwargs)
+    except anthropic.BadRequestError as exc:
+        if "temperature" in str(exc) and "temperature" in kwargs:
+            kwargs.pop("temperature")
+            return client.messages.create(**kwargs)
+        raise
+
+
 def anthropic_model(
     model: str = "claude-sonnet-4-6",
     *,
@@ -37,7 +49,7 @@ def anthropic_model(
         }
         if system:
             kwargs["system"] = system
-        resp = client.messages.create(**kwargs)
+        resp = _create(client, **kwargs)
         # Concatenate any text blocks the model returned.
         return "".join(b.text for b in resp.content if hasattr(b, "text"))
 
@@ -60,7 +72,8 @@ def anthropic_judge(
     client = _client(api_key)
 
     def fn(system: str, user: str) -> str:
-        resp = client.messages.create(
+        resp = _create(
+            client,
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
