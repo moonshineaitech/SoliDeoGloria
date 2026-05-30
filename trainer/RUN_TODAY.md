@@ -3,6 +3,11 @@
 This is the no-prior-experience, copy-paste guide to going from nothing
 to a published, downloadable, Christian-aligned LLM **today**.
 
+> **Want zero infra — no GPU rental, no CLI?** See
+> **[`AUTOTRAIN.md`](AUTOTRAIN.md)** instead: generate the data once (no
+> GPU), then upload two files to HuggingFace AutoTrain and click Train.
+> The three paths below give a better score, but AutoTrain is the easiest.
+
 There are three paths. Pick ONE based on your budget. All three produce
 a real, usable, shareable model.
 

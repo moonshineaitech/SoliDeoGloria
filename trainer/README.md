@@ -19,6 +19,11 @@ Pipeline is **base-model-agnostic** — swap by editing one YAML.
 > python -m trainer.scripts.preflight --config configs/sft_gemma_4_31b.yaml  # don't waste money
 > ./scripts/run_all.sh                                     # one command, resume-safe
 > ```
+>
+> ### 🖱️ Don't want to touch a GPU or the CLI at all?
+> See **[`AUTOTRAIN.md`](AUTOTRAIN.md)** — generate the data once (no GPU),
+> then upload two files to HuggingFace AutoTrain (or Together / OpenPipe)
+> and click Train. Trades ~10-15 CAB-FF points for zero infra.
 
 ## Base model picks (May 29 2026 — verified)
 
