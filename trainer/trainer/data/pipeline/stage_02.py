@@ -39,7 +39,13 @@ def _make_anthropic_teacher(model: str) -> Callable[[str, str], str]:
         raise ImportError(
             "anthropic package required. Install: pip install '.[teachers]'"
         ) from exc
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    # max_retries gives exponential backoff on 429/overloaded so a rate-limit
+    # blip during a long (~1000-call) build skips fewer examples.
+    client = anthropic.Anthropic(
+        api_key=os.environ.get("ANTHROPIC_API_KEY"),
+        max_retries=6,
+        timeout=120.0,
+    )
     actual_model = "claude-opus-4-7" if model == "claude-opus-4-7" else model
 
     def call(system: str, user: str) -> str:
@@ -62,7 +68,11 @@ def _make_openai_teacher(model: str) -> Callable[[str, str], str]:
         raise ImportError(
             "openai package required. Install: pip install '.[teachers]'"
         ) from exc
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    client = OpenAI(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+        max_retries=6,
+        timeout=120.0,
+    )
 
     def call(system: str, user: str) -> str:
         resp = client.chat.completions.create(
