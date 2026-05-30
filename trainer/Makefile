@@ -1,4 +1,4 @@
-.PHONY: help dry-run data sft dpo grpo iterate best-of-n eval drilldown gate quantize publish clean install gpu-install
+.PHONY: help dry-run data sft dpo grpo iterate best-of-n eval drilldown gate quantize publish clean install gpu-install preflight cost run-all
 .DEFAULT_GOAL := help
 
 # Defaults — override on the command line, e.g. `make sft CONFIG=...`
@@ -21,6 +21,13 @@ help:
 	@echo "  SETUP"
 	@echo "    make install        Install core (data pipeline only, no GPU)"
 	@echo "    make gpu-install    Install GPU stack (Torch, TRL, PEFT, Liger)"
+	@echo ""
+	@echo "  GET STARTED TODAY"
+	@echo "    make cost           Show cost estimates for every path"
+	@echo "    make preflight      Verify GPU/deps/keys BEFORE spending money"
+	@echo "    make run-all        One command: data -> sft -> dpo -> iterate"
+	@echo "                          -> eval -> gate -> quantize (resume-safe)"
+	@echo "    (see RUN_TODAY.md for the full idiot-proof guide)"
 	@echo ""
 	@echo "  DRY RUN (no GPU, no API key — ~3 min sanity check)"
 	@echo "    make dry-run"
@@ -48,6 +55,15 @@ help:
 	@echo "    make sft CONFIG=configs/sft_deepseek_v4_flash.yaml # frontier MoE (4-8x H100)"
 	@echo "    make sft CONFIG=configs/sft_glm_5_1.yaml           # frontier agentic"
 	@echo "    make sft CONFIG=configs/sft_kimi_k2_6.yaml         # frontier reasoning"
+
+cost:
+	python -m trainer.scripts.cost_estimate --all-presets
+
+preflight:
+	python -m trainer.scripts.preflight --config $(CONFIG)
+
+run-all:
+	./scripts/run_all.sh
 
 install:
 	pip install -e .

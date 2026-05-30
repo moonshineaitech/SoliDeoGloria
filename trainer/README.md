@@ -9,6 +9,17 @@ The reference model produced by this pipeline is:
 
 Pipeline is **base-model-agnostic** — swap by editing one YAML.
 
+> ### ⏱️ Want to actually build this today?
+> Go straight to **[`RUN_TODAY.md`](RUN_TODAY.md)** — a copy-paste,
+> no-experience-required runbook with three budget paths
+> (~$10 / ~$70-150 / ~$600-900), exact GPU-provider clicks, and exact
+> commands. Then:
+> ```bash
+> python -m trainer.scripts.cost_estimate --all-presets   # see costs first
+> python -m trainer.scripts.preflight --config configs/sft_gemma_4_31b.yaml  # don't waste money
+> ./scripts/run_all.sh                                     # one command, resume-safe
+> ```
+
 ## Base model picks (May 29 2026 — verified)
 
 The May 2026 frontier of open weights is genuinely exceptional. Pick by
